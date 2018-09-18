@@ -12,6 +12,7 @@ print("\n-- LISTA DE OCORRENCIAS EM ORDEM ALFABETICA --")
 for j in range(0, 26):
     print("%c - %d" % (chr(j+65), ocorrencias[j])),
 
+ordenado = []
 print("\n-- LISTA DE OCORRENCIAS EM ORDEM DE MAIOR INCIDENCIA --")
 for k in range(0, 26):
     max_value = max(ocorrencias)
@@ -19,4 +20,12 @@ for k in range(0, 26):
         print("%c - %d ---> %c" % (chr(ocorrencias.index(max_value)+65), max_value, letras[k]))
     else:
         print("%c - %d" % (chr(ocorrencias.index(max_value)+65), max_value))
+    ordenado.append(chr(ocorrencias.index(max_value)+65))
     ocorrencias[ocorrencias.index(max_value)] = -1
+
+saida = ''
+for j in range(0, len(entrada)):
+    indice = ordenado.index(entrada[j])
+    saida += letras[indice]
+
+print("\nMensagem decifrada: %s" % saida)
