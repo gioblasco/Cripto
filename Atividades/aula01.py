@@ -30,14 +30,16 @@ for k in range(0, 26):
     ocorrencias[ocorrencias.index(max_value)] = -1
 
 # printa mensagem decifrada
-while True:
-    saida = ''
-    for j in range(0, len(entrada)):
+saida = []
+for j in range(0, len(entrada)):
+    if entrada[j].isalpha():
         indice = ordenado.index(entrada[j])
-        saida += letras[indice]
+        saida.append(letras[indice])
 
-    print("\nMensagem decifrada: %s\n" % saida)
-    
+print("\nMensagem decifrada: %s\n" % ''.join(saida))
+
+while True:
+    # verifica se quer editar letras    
     while True:
         msg = input("Deseja alterar alguma letra? \n1 - Sim\n2 - Nao\n")
         if msg != '1' and msg != '2':
@@ -45,10 +47,11 @@ while True:
             continue
         else:
             break
-    
+
+    # se quer substituir 
     if msg == '1':
         while True:
-            let1 = input("Qual letra quer substituir? ")
+            let1 = input("\nQual letra quer substituir? ")
             if not let1.isalpha():
                 print("%s nao eh uma letra" % let1)
                 continue
@@ -61,9 +64,12 @@ while True:
                 continue
             else:
                 break
-        ind1 = letras.index(let1.upper())
-        ind2 = letras.index(let2.upper())
-        letras[ind1] = let2.upper()
-        letras[ind2] = let1.upper()
+        while True:
+            try:
+                indice = saida.index(let1.upper())
+                saida[indice] = let2.upper()
+            except ValueError:
+                break
+        print("\nNova mensagem decifrada: %s\n" % ''.join(saida))
     else:
         break
