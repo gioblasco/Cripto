@@ -1,5 +1,8 @@
-# le entrada
-entrada = input()
+# roda com: $ python3 homework01.py
+# le entrada - troque o arquivo
+arquivo = open("Homework01_Cifra2.txt", "r")
+entrada = arquivo.read()
+arquivo.close()
 entrada = entrada.upper();
 
 # define sequencia de estatistica
@@ -22,24 +25,21 @@ ordenado = []
 print("\n-- LISTA DE OCORRENCIAS EM ORDEM DE MAIOR INCIDENCIA --")
 for k in range(0, 26):
     max_value = max(ocorrencias)
-    if max_value > 0:
-        print("%c - %d ---> %c" % (chr(ocorrencias.index(max_value)+65), max_value, letras[k]))
-    else:
-        print("%c - %d" % (chr(ocorrencias.index(max_value)+65), max_value))
     ordenado.append(chr(ocorrencias.index(max_value)+65))
     ocorrencias[ocorrencias.index(max_value)] = -1
+print(' '.join(ordenado))
 
 # printa mensagem decifrada
-saida = []
-for j in range(0, len(entrada)):
-    if entrada[j].isalpha():
-        indice = ordenado.index(entrada[j])
-        saida.append(letras[indice])
-
-print("\nMensagem decifrada: %s\n" % ''.join(saida))
-
 while True:
-    # verifica se quer editar letras    
+    saida = []
+    for j in range(0, len(entrada)):
+        if entrada[j].isalpha():
+            indice = ordenado.index(entrada[j])
+            saida.append(letras[indice])
+
+    print("\n\nMensagem decifrada: %s\n" % ''.join(saida))
+
+    # verifica se quer editar letras
     while True:
         msg = input("Deseja alterar alguma letra? \n1 - Sim\n2 - Nao\n")
         if msg != '1' and msg != '2':
@@ -48,7 +48,7 @@ while True:
         else:
             break
 
-    # se quer substituir 
+    # se quer substituir
     if msg == '1':
         while True:
             let1 = input("\nQual letra quer substituir? ")
@@ -64,12 +64,19 @@ while True:
                 continue
             else:
                 break
-        while True:
-            try:
-                indice = saida.index(let1.upper())
-                saida[indice] = let2.upper()
-            except ValueError:
-                break
-        print("\nNova mensagem decifrada: %s\n" % ''.join(saida))
+        indice1 = letras.index(let1.upper())
+        indice2 = letras.index(let2.upper())
+        aux = ordenado[indice1]
+        ordenado[indice1] = ordenado[indice2]
+        ordenado[indice2] = aux
+        print(' '.join(ordenado))
     else:
         break
+
+# troque o nome do arquivo
+arquivosaida = open("Homework01_Cifra2_saida.txt", "w")
+for i in range(0, len(letras)):
+    arquivosaida.write("%c -> %c\n" % (ordenado[i], letras[i]))
+arquivosaida.write("\nCifrado: %s" % entrada)
+arquivosaida.write("Decifrado: %s" % ''.join(saida))
+arquivosaida.close()
