@@ -26,7 +26,7 @@ def stream():
 def init():
     for i in range(0, 256):
         S[i] = i
-        T[i] = int(chave[i % len(chave)])
+        T[i] = ord(chave[i % len(chave)])
     j = 0
     for i in range(0, 256):
         j = (j + S[i] + T[i]) % 256
@@ -37,13 +37,13 @@ cifra = arquivo_cifra.read()
 arquivo_cifra.close()
 
 arquivo_chave = open(sys.argv[2], "r")
-chave = arquivo_chave.read()
+chave = arquivo_chave.read().rstrip()
 arquivo_chave.close()
 
 # converter cifra em hexadecimal para ascii
 cifra = binascii.unhexlify(cifra.rstrip())
 cifra = cifra.decode()
-chave = "102392090392"
+chave = "chave"
 
 init()
 stream()
