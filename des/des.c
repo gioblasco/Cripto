@@ -22,7 +22,7 @@ unsigned int reverseBits(unsigned int num);
 void main(){
     unsigned int entrada[8];
 
-    // primeiro mocado pra ver se os valores batem
+    // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x67;
     entrada[1] = 0x5A;
     entrada[2] = 0x69;
@@ -79,6 +79,7 @@ void permutacao_inicial(unsigned int *hexa){
 
 
     // inicialização dos vetores 
+    // mascaras inicializadas com potências de 2
     int j = 0;
     for (int i = 7; i >= 0; i--) {
         mascaras[j] = ceil(pow(2, i));
@@ -91,21 +92,25 @@ void permutacao_inicial(unsigned int *hexa){
         j++;
     }
 
+    // vetor final inicializado com zeros
     for (int i = 0; i < 8; i++)
         permutado[i] = 0;
 
-    for(int i = 0; i < 8; i++){
-        if (shift_counter[1] < 0)
-            permutado[0] |= ((hexa[i]&mascaras[1]) << abs(shift_counter[1])); 
-        else  
-            permutado[0] |= ((hexa[i]&mascaras[1]) >> shift_counter[1]); 
-        
-        printf("iteração %d\nshift_counter %d\npermutado[0] = %u\n", i, shift_counter[1], permutado[0]);
-        printf("------------------------------------------\n");
-        shift_counter[1]++;
+
+    printf("vetor permutado:\n");
+    for(int j = 0; j < 8; j++) {
+        for(int i = 0; i < 8; i++) {
+            if (shift_counter[ordem_permutacao[j]] < 0)
+                permutado[j] |= ((hexa[i]&mascaras[ordem_permutacao[j]]) << abs(shift_counter[ordem_permutacao[j]])); 
+            else  
+                permutado[j] |= ((hexa[i]&mascaras[ordem_permutacao[j]]) >> shift_counter[ordem_permutacao[j]]); 
+            
+            shift_counter[ordem_permutacao[j]]++;
+        }
+        permutado[j] = reverseBits(permutado[j]);
+        printf("%2x ", permutado[j]);
     }
-    permutado[0] = reverseBits(permutado[0]);
-    printf("%2x\n", permutado[0]);
+    printf("\n");
 }
 
 /* 
@@ -127,17 +132,4 @@ unsigned int reverseBits(unsigned int num) {
     reverse_num <<= count; 
     return reverse_num; 
 } 
-
-// FIXME: essa função 
-void printa_vetor(char *nome, void *vetor, int flag_unsigned){
-    if (flag_unsigned) {
-        unsigned int *vet = (unsigned int *) vetor;
-        for (int i = 0; i < 8; i++)
-            printf("%s[%d] = %u\n", nome, i, vet[i]);
-    } else {
-        long int *vet = (long int *) vetor;
-        for (int i = 0; i < 8; i++)
-            printf("%s[%d] = %ld\n", nome, i, vet[i]);
-    }
-}
 
