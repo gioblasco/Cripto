@@ -14,13 +14,14 @@
 // funções de tabela
 void permutacao_inicial(unsigned int *hexa);
 void divide_bloco(unsigned int *hexa, unsigned int *G, unsigned int *D);
+unsigned int * expansao(unsigned int *D);
 
 // funções auxiliares
 void printa_vetor(char *nome, void *vetor, int flag_unsigned);
 unsigned int reverseBits(unsigned int num);
 
 void main(){
-    unsigned int entrada[8], chave[8], L[4], R[4];
+    unsigned int entrada[8], chave[8], L[4], R[4], *E;
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x67;
@@ -40,7 +41,7 @@ void main(){
 
     permutacao_inicial(entrada);
     divide_bloco(entrada, L, R);
-
+    E = expansao(R);
 }
 
 /*
@@ -108,6 +109,13 @@ void permutacao_inicial(unsigned int *hexa){
         }
         permutado[j] = reverseBits(permutado[j]);
         printf("%4X ", permutado[j]);
+        /* se fizer:
+        hexa[j] = reverseBits(permutado[j]);
+        printf("%4X ", hexa[j]);
+
+        hexa ta ficando com valores finais errados, diferentes do permutado.
+        n entendi nada
+        */
     }
     printf("\n");
 }
@@ -122,6 +130,9 @@ void divide_bloco(unsigned int *hexa, unsigned int *G, unsigned int *D){
 }
 
 /* 2. função de expansão */
+unsigned int * expansao(unsigned int *D){
+
+}
 
 
 /*
