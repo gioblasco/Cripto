@@ -1,0 +1,12 @@
+ORGANIZAÇÃO
+
+1)Criar uma pasta com o nome do conteúdo a ser feito backup.
+
+2) A cada Backup criar uma pasta dentro da pasta do respectivo conteúdo com nome igual a data no formato YYYY_MM_DD
+
+PERIODICIDADE
+
+1) Backup no HD portátil diário ou por semana.
+
+2) Backp do HD para um DVD uma vez por mês, após fechamento.
+m
