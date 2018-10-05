@@ -15,7 +15,7 @@ void print_bin(unsigned char num);
 void atribui(unsigned char *v1, unsigned char *v2);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[5], Lfinal[5], R[5], *E;
+    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], *E;
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x67;
