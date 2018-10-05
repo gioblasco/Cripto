@@ -1,19 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 
 // funções de tabela
 void permutacao_inicial(unsigned char *hexa);
-//void divide_bloco(unsigned int *hexa, unsigned int *G, unsigned int *D);
-unsigned int * expansao(unsigned int *D);
+void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
+unsigned char * expansao(unsigned char *D);
 
 // funções auxiliares
 unsigned char reverseBits(unsigned char num);
 void print_bin(unsigned char num);
+void atribui(unsigned char *v1, unsigned char *v2);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], *E;
+    unsigned char entrada[8], chave[8], L[5], Lfinal[5], R[5], *E;
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x67;
@@ -32,17 +34,15 @@ void main(){
     */
 
     permutacao_inicial(entrada);
-    //divide_bloco(entrada, L, R);
+    divide_bloco(entrada, L, R);
     // round de 16 passos
-    /*
     for(int i = 0; i < 16; i++){
-      Lfinal = R;
-      
+      atribui(Lfinal, R);
+
       E = expansao(R);
 
-      L = Lfinal;
+      atribui(L, Lfinal);
     }
-      */
 }
 
 void permutacao_inicial(unsigned char *hexa){
@@ -104,6 +104,9 @@ void permutacao_inicial(unsigned char *hexa){
         permutado[j] = reverseBits(permutado[j]);
         printf("%2X ", permutado[j]);
     }
+    // atribui valores a variavel de entrada
+    atribui(hexa, permutado);
+
     printf("\n");
 }
 
@@ -111,15 +114,19 @@ void permutacao_inicial(unsigned char *hexa){
 https://www.nku.edu/~christensen/DESschneier.pdf
 
 1. dividir o bloco de 64-bits (8 caracteres) iniciais em 2 blocos (de 32 bits) */
-void divide_bloco(unsigned int *hexa, unsigned int *G, unsigned int *D){
-  for(int i = 0; i < 4; i++)
+void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
+  for(int i = 0; i < 4; i++){
+    G[i] = 0;
     G[i] = hexa[i];
-  for(int i = 4; i < 8; i++)
-    D[i] = hexa[i];
+  }
+  for(int j = 4; j < 8; j++){
+    D[j] = 0;
+    D[j] = hexa[j];
+  }
 }
 
 /* 2. função de expansão: transforma 32 bits provenientes do vetor D e transforma em 48 bits */
-unsigned int * expansao(unsigned int *D){
+unsigned char * expansao(unsigned char *D){
   for(int i = 0; i < 8; i++){
 
   }
@@ -128,32 +135,32 @@ unsigned int * expansao(unsigned int *D){
 /* 3. faz o deslocamento de chave (rotação)
 de tal maneira que os bits em segunda posição tomam a primeira posição,
 os em terceira posição a segunda, etc e os bits em primeira posição passam para a última posição.  */
-void desloca_chave(unsigned int *chave){
+void desloca_chave(unsigned char *chave){
 
 }
 
 /* 4. permutação CP-2 -> transforma 56 bits em 48 bits */
-void *cp2(unsigned int *chave){
+void *cp2(unsigned char *chave){
 
 }
 
 /* 5. XOR entre texto expandido e chave (ambos 48 bits) */
-unsigned int * xor_primeiro(unsigned int *chave, unsigned int *E){
+unsigned int * xor_primeiro(unsigned char *chave, unsigned char *E){
 
 }
 
 /* 6. passa a chave proveniente do XOR pelas S-box */
-unsigned int * funcoes_selecao(unsigned int *chave){
+unsigned char * funcoes_selecao(unsigned char *chave){
 
 }
 
 /* 7. XOR entre L e chave proveniente das S-box (ambos 48 bits) */
-unsigned int * xor_ultimo(unsigned int *Linicial, unsigned int *S){
+unsigned char * xor_ultimo(unsigned char *Linicial, unsigned char *S){
 
 }
 
 /* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
-unsigned int * permutacao_reversa(unsigned int *G, unsigned int *D){
+unsigned char * permutacao_reversa(unsigned char *G, unsigned char *D){
 
 }
 
@@ -191,4 +198,11 @@ void print_bin(unsigned char num){
             printf("0");
     }
     printf("\n");
+}
+
+/* atribui o valor do vetor v2 para o vetor v1 */
+void atribui(unsigned char *v1, unsigned char *v2){
+  for(int i = 0; i < strlen(v1); i++){
+    v1[i] = v2[i];
+  }
 }
