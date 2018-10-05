@@ -21,7 +21,7 @@ void printa_vetor(char *nome, void *vetor, int flag_unsigned);
 unsigned int reverseBits(unsigned int num);
 
 void main(){
-    unsigned int entrada[8], chave[8], L[4], R[4], *E;
+    unsigned int entrada[8], chave[8], L[4], Lfinal[4], R[4], *E;
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x67;
@@ -41,7 +41,16 @@ void main(){
 
     permutacao_inicial(entrada);
     divide_bloco(entrada, L, R);
-    E = expansao(R);
+    // round de 16 passos
+    for(int i = 0; i < 16; i++){
+      Lfinal = R;
+      E = expansao(R);
+
+
+
+
+      L = Lfinal;
+    }
 }
 
 /*
@@ -120,7 +129,9 @@ void permutacao_inicial(unsigned int *hexa){
     printf("\n");
 }
 
-/* passos dos rounds para criação de chave: https://br.ccm.net/contents/132-introducao-a-codificacao-des
+/* passos de cada round: https://br.ccm.net/contents/132-introducao-a-codificacao-des
+https://www.nku.edu/~christensen/DESschneier.pdf
+
 1. dividir o bloco de 64-bits (8 caracteres) iniciais em 2 blocos (de 32 bits) */
 void divide_bloco(unsigned int *hexa, unsigned int *G, unsigned int *D){
   for(int i = 0; i < 4; i++)
@@ -129,10 +140,45 @@ void divide_bloco(unsigned int *hexa, unsigned int *G, unsigned int *D){
     D[i] = hexa[i];
 }
 
-/* 2. função de expansão */
+/* 2. função de expansão: transforma 32 bits provenientes do vetor D e transforma em 48 bits */
 unsigned int * expansao(unsigned int *D){
+  for(int i = 0; i < 8; i++){
+
+  }
+}
+
+/* 3. faz o deslocamento de chave (rotação)
+de tal maneira que os bits em segunda posição tomam a primeira posição,
+os em terceira posição a segunda, etc e os bits em primeira posição passam para a última posição.  */
+void desloca_chave(unsigned int *chave){
 
 }
+
+/* 4. permutação CP-2 -> transforma 56 bits em 48 bits */
+void *cp2(unsigned int *chave){
+
+}
+
+/* 5. XOR entre texto expandido e chave (ambos 48 bits) */
+unsigned int * xor_primeiro(unsigned int *chave, unsigned int *E){
+
+}
+
+/* 6. passa a chave proveniente do XOR pelas S-box */
+unsigned int * funcoes_selecao(unsigned int *){
+
+}
+
+/* 7. XOR entre L e chave proveniente das S-box (ambos 48 bits) */
+unsigned int * xor_ultimo(unsigned int *Linicial, unsigned int *S){
+
+}
+
+/* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
+unsigned int * permutacao_reversa(unsigned int *G, unsigned int *D){
+
+}
+
 
 
 /*
