@@ -6,12 +6,12 @@
 /*
  unsigned char E[48] = {
                     0x20, 0x01, 0x02, 0x03, 0x04, 0x05,
-                    0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 
-                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 
-                    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 
-                    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 
+                    0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11,
+                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+                    0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
+                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D,
                     0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x01
                 };
 */
@@ -24,37 +24,60 @@ unsigned char * expansao(unsigned char *D);
 // funções auxiliares
 unsigned char reverseBits(unsigned char num);
 void print_bin(unsigned char num);
-void atribui(unsigned char *v1, unsigned char *v2);
+void atribui(unsigned char *v1, unsigned char *v2, short int tam);
+void print_saida(unsigned char *vetor, short int tam);
 
 void main(){
     unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], *E;
 
     // primeiro setando direto pra ver se os valores batem
-    entrada[0] = 0x67;
-    entrada[1] = 0x5A;
-    entrada[2] = 0x69;
-    entrada[3] = 0x67;
-    entrada[4] = 0x5E;
-    entrada[5] = 0x5A;
-    entrada[6] = 0x6B;
-    entrada[7] = 0x5A;
+    entrada[0] = 0x69;
+    entrada[1] = 0x6E;
+    entrada[2] = 0x74;
+    entrada[3] = 0x72;
+    entrada[4] = 0x6F;
+    entrada[5] = 0x64;
+    entrada[6] = 0x75;
+    entrada[7] = 0x63;
 
     /*
     for (int i = 0; i < 8; i++) {
-        scanf("%2x", &entrada[i]);
+        scanf("%2hhx", &entrada[i]);
     }
     */
 
+    printf("PLAIN TEXT\n");
+    print_saida(entrada, 8);
+
     permutacao_inicial(entrada);
+
+    chave[0] = 0x31;
+    chave[1] = 0x32;
+    chave[2] = 0x33;
+    chave[3] = 0x34;
+    chave[4] = 0x35;
+    chave[5] = 0x36;
+    chave[6] = 0x37;
+    chave[7] = 0x38;
+
+    /*
+    for (int i = 0; i < 8; i++) {
+        scanf("%2hhx", &chave[i]);
+    }
+    */
+
+    printf("CHAVE\n");
+    print_saida(chave, 8);
+
     divide_bloco(entrada, L, R);
 
     // round de 16 passos
     for(int i = 0; i < 16; i++){
-      atribui(Lfinal, R);
+      atribui(Lfinal, R, 4);
 
       E = expansao(R);
 
-      atribui(L, Lfinal);
+      atribui(L, Lfinal, 4);
     }
 }
 
@@ -105,7 +128,6 @@ void permutacao_inicial(unsigned char *hexa){
     for (int i = 0; i < 8; i++)
         permutado[i] = 0;
 
-    printf("\nApos permutacao inicial:\n");
     for(int j = 0; j < 8; j++) {
         for(int i = 0; i < 8; i++) {
             if (shift_counter[ordem_permutacao[j]] < 0)
@@ -115,12 +137,12 @@ void permutacao_inicial(unsigned char *hexa){
             shift_counter[ordem_permutacao[j]]++;
         }
         permutado[j] = reverseBits(permutado[j]);
-        printf("%2X ", permutado[j]);
     }
     // atribui valores a variavel de entrada
-    atribui(hexa, permutado);
+    atribui(hexa, permutado, 8);
 
-    printf("\n");
+    printf("IP\n");
+    print_saida(hexa, 8);
 }
 
 /* passos de cada round: https://br.ccm.net/contents/132-introducao-a-codificacao-des
@@ -140,12 +162,12 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
 unsigned char* expansao(unsigned char *D){
     unsigned char E[48] = {
                 32, 1,  2,  3,  4,  5,
-                4,  5,  6,  7,  8,  9, 
-                8,  9,  10, 11, 12, 13, 
-                12, 13, 14, 15, 16, 17, 
-                16, 17, 18, 19, 20, 21, 
-                20, 21, 22, 23, 24, 25, 
-                24, 25, 26, 27, 28, 29, 
+                4,  5,  6,  7,  8,  9,
+                8,  9,  10, 11, 12, 13,
+                12, 13, 14, 15, 16, 17,
+                16, 17, 18, 19, 20, 21,
+                20, 21, 22, 23, 24, 25,
+                24, 25, 26, 27, 28, 29,
                 28, 29, 30, 31, 32, 1
             };
     unsigned char expanded[8];
@@ -155,7 +177,7 @@ unsigned char* expansao(unsigned char *D){
     printf("Vetor que vai ser expandido:\n");
     for (int i = 0; i < 8; i++){
         expanded[i] = 0;
-        printf("%2x ", D[i]);
+        printf("%02X ", D[i]);
     }
 
     printf("\nVetor expandido (checar!):\n");
@@ -166,7 +188,7 @@ unsigned char* expansao(unsigned char *D){
             expanded[i] |= temp_bit;
             j++;
         }
-        printf("%2x ", expanded[i]); 
+        printf("%02X ", expanded[i]);
     }
     printf("\n");
     return expanded;
@@ -336,8 +358,14 @@ void print_bin(unsigned char num){
 }
 
 /* atribui o valor do vetor v2 para o vetor v1 */
-void atribui(unsigned char *v1, unsigned char *v2){
-  for(int i = 0; i < strlen(v1); i++){
+void atribui(unsigned char *v1, unsigned char *v2, short int tam){
+  for(short int i = 0; i < tam; i++){
     v1[i] = v2[i];
   }
+}
+
+void print_saida(unsigned char *vetor, short int tam){
+  for(short int i = 0; i < tam; i++)
+    printf("%02X ", vetor[i]);
+  printf("\n\n");
 }
