@@ -19,15 +19,16 @@
 // funções de tabela
 void permutacao_inicial(unsigned char *hexa);
 void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
-unsigned char * expansao(unsigned char *D);
+void expansao(unsigned char *D, unsigned char *E);
 
 // funções auxiliares
-unsigned char reverseBits(unsigned char num);
 void print_bin(unsigned char num);
+void print_hex(unsigned char *vetor, int tam);
 void atribui(unsigned char *v1, unsigned char *v2);
+unsigned char reverseBits(unsigned char num);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], *E;
+    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[8];
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x67;
@@ -40,21 +41,23 @@ void main(){
     entrada[7] = 0x5A;
 
     /*
-    for (int i = 0; i < 8; i++) {
-        scanf("%2x", &entrada[i]);
-    }
-    */
+       for (int i = 0; i < 8; i++) {
+       scanf("%2x", &entrada[i]);
+       }
+       */
 
     permutacao_inicial(entrada);
     divide_bloco(entrada, L, R);
 
     // round de 16 passos
     for(int i = 0; i < 16; i++){
-      atribui(Lfinal, R);
+        atribui(Lfinal, R);
 
-      E = expansao(R);
+        expansao(R, E);
+        printf("Vetor expandido: \n");
+        print_hex(E, 8);    
 
-      atribui(L, Lfinal);
+        atribui(L, Lfinal);
     }
 }
 
@@ -137,8 +140,8 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
 }
 
 /* 2. função de expansão: transforma 32 bits provenientes do vetor D e transforma em 48 bits */
-unsigned char* expansao(unsigned char *D){
-    unsigned char E[48] = {
+void expansao(unsigned char *D, unsigned char *E){
+    unsigned char M[48] = {
                 32, 1,  2,  3,  4,  5,
                 4,  5,  6,  7,  8,  9, 
                 8,  9,  10, 11, 12, 13, 
@@ -148,28 +151,26 @@ unsigned char* expansao(unsigned char *D){
                 24, 25, 26, 27, 28, 29, 
                 28, 29, 30, 31, 32, 1
             };
-    unsigned char expanded[8];
+    unsigned char expandido[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned int mascara[8] = {1, 128, 64, 32, 16, 8, 4, 2};
     unsigned char temp_bit = 0;
     int shift_counter, j = 0;
 
-    printf("Vetor que vai ser expandido:\n");
-    for (int i = 0; i < 8; i++){
-        expanded[i] = 0;
-        printf("%2x ", D[i]);
-    }
-
-    printf("\nVetor expandido (checar!):\n");
+    printf("Entrada para expansão:\n");
+    print_hex(D, 4);
 
     for (int i = 0; i < 8; i++) {
         for (shift_counter = 5; shift_counter >= 0; shift_counter--) {
-            temp_bit = (D[(E[j]-1)/8] & E[j]) << shift_counter;
-            expanded[i] |= temp_bit;
+            temp_bit = (D[(M[j]-1)/8] & mascara[M[j]%8]);
+            if (temp_bit != 0)
+                temp_bit = 1 << shift_counter;
+            else
+                temp_bit = 0 << shift_counter;
+            expandido[i] |= temp_bit;
             j++;
         }
-        printf("%2x ", expanded[i]); 
+        E[i] = expandido[i];
     }
-    printf("\n");
-    return expanded;
 }
 
 /* 3. faz o deslocamento de chave (rotação)
@@ -277,7 +278,7 @@ unsigned char * funcoes_selecao(unsigned char *chave){
     posicao = 0;
   }
 
-  return res_sbox;
+ // return res_sbox;
 }
 
 /* 7. XOR entre L e resultado proveniente das S-box */
@@ -288,7 +289,7 @@ unsigned char * xor_ultimo(unsigned char *Linicial, unsigned char *S){
     res_xor[i] = Linicial[i] ^ S[i];
   }
 
-  return res_xor;
+//  return res_xor;
 }
 
 /* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
@@ -340,4 +341,11 @@ void atribui(unsigned char *v1, unsigned char *v2){
   for(int i = 0; i < strlen(v1); i++){
     v1[i] = v2[i];
   }
+}
+
+/* printa as posições do vetor em hexa */
+void print_hex(unsigned char *vetor, int tam){
+    for (int i = 0; i < tam; i++) 
+        printf("%2x ", vetor[i]);
+    printf("\n");
 }
