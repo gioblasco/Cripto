@@ -150,7 +150,7 @@ unsigned char * xor_primeiro(unsigned char *chave, unsigned char *E){
 }
 
 /* 6. passa a resultado proveniente do XOR pelas S-box */
-unsigned int * funcoes_selecao(unsigned char *chave){
+unsigned int funcoes_selecao(unsigned char *chave){
 
   unsigned char mascarafim = 1, mascarainicio = 32, mascarameio = 30, posicao = 0;
   int res_sbox = 0, aux = 0;
@@ -251,6 +251,8 @@ unsigned int * funcoes_selecao(unsigned char *chave){
     }
     posicao = 0;
   }
+
+  return res_sbox;
 }
 
 /* 7. XOR entre L e resultado proveniente das S-box */
