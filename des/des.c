@@ -3,6 +3,18 @@
 #include <math.h>
 #include <string.h>
 
+/*
+ unsigned char E[48] = {
+                    0x20, 0x01, 0x02, 0x03, 0x04, 0x05,
+                    0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 
+                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 
+                    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 
+                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 
+                    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 
+                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 
+                    0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x01
+                };
+*/
 
 // funções de tabela
 void permutacao_inicial(unsigned char *hexa);
@@ -35,6 +47,10 @@ void main(){
 
     permutacao_inicial(entrada);
     divide_bloco(entrada, L, R);
+
+    E = malloc(48 * sizeof(unsigned char));
+      E = expansao(R);
+      /*
     // round de 16 passos
     for(int i = 0; i < 16; i++){
       atribui(Lfinal, R);
@@ -43,6 +59,7 @@ void main(){
 
       atribui(L, Lfinal);
     }
+    */
 }
 
 void permutacao_inicial(unsigned char *hexa){
@@ -126,10 +143,38 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
 }
 
 /* 2. função de expansão: transforma 32 bits provenientes do vetor D e transforma em 48 bits */
-unsigned char * expansao(unsigned char *D){
-  for(int i = 0; i < 8; i++){
+unsigned char* expansao(unsigned char *D){
+    unsigned char E[48] = {
+                32, 1,  2,  3,  4,  5,
+                4,  5,  6,  7,  8,  9, 
+                8,  9,  10, 11, 12, 13, 
+                12, 13, 14, 15, 16, 17, 
+                16, 17, 18, 19, 20, 21, 
+                20, 21, 22, 23, 24, 25, 
+                24, 25, 26, 27, 28, 29, 
+                28, 29, 30, 31, 32, 1
+            };
+    unsigned char expanded[8];
+    unsigned char temp_bit = 0;
+    int shift_counter, j = 0;
 
-  }
+    printf("Vetor que vai ser expandido:\n");
+    for (int i = 0; i < 8; i++){
+        expanded[i] = 0;
+        printf("%2x ", D[i]);
+    }
+
+    printf("\nVetor expandido (checar!):\n");
+
+    for (int i = 0; i < 8; i++) {
+        for (shift_counter = 5; shift_counter >= 0; shift_counter--) {
+            temp_bit = (D[(E[j]-1)/8] & E[j]) << shift_counter;
+            expanded[i] |= temp_bit;
+            j++;
+        }
+        printf("%2x ", expanded[i]); 
+    }
+    printf("\n");
 }
 
 /* 3. faz o deslocamento de chave (rotação)
