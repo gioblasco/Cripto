@@ -118,10 +118,8 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
   for(int i = 0; i < 4; i++){
     G[i] = 0;
     G[i] = hexa[i];
-  }
-  for(int j = 4; j < 8; j++){
     D[j] = 0;
-    D[j] = hexa[j];
+    D[j] = hexa[i+4];
   }
 }
 
@@ -150,10 +148,9 @@ unsigned char * xor_primeiro(unsigned char *chave, unsigned char *E){
 }
 
 /* 6. passa a resultado proveniente do XOR pelas S-box */
-unsigned int funcoes_selecao(unsigned char *chave){
+unsigned char * funcoes_selecao(unsigned char *chave){
 
-  unsigned char mascarafim = 1, mascarainicio = 32, mascarameio = 30, posicao = 0;
-  int res_sbox = 0, aux = 0;
+  unsigned char mascarafim = 1, mascarainicio = 32, mascarameio = 30, posicao = 0, aux = 0, res_sbox[4];
 
   // tabelas constantes Sbox -> colocar lá no cabeçalho
   unsigned char S1[64] = { 14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
@@ -196,59 +193,45 @@ unsigned int funcoes_selecao(unsigned char *chave){
                            7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8,
                            2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11 };
 
-  for(short int i = 1; i <= 8; i++){
+  for(short int i=0; i < 4; i++){
+    res_sbox[i] = 0;
+  }
+
+  for(short int i = 0; i < 8; i++){
     // posicao absoluta na lista da sbox com indice de linha e coluna calculado
     posicao = ((chave[i] & mascarafim) | ((chave[i] & mascarainicio) >> 4)) * 16 + ((chave[i] & mascarameio) >> 1) + 1;
     // cada bloco de 6 bits é substituído em um bloco de 4 bits
     switch(i){
-      case 1:
+      case 0:
         chave[i] = S1[posicao];
-        aux = chave[i];
-        aux <<= 28;
-        res_sbox |= aux;
+      break;
+      case 1:
+        chave[i] = S2[posicao];
       break;
       case 2:
-        chave[i] = S2[posicao];
-        aux = chave[i];
-        aux <<= 24;
-        res_sbox |= aux;
+        chave[i] = S3[posicao];
       break;
       case 3:
-        chave[i] = S3[posicao];
-        aux = chave[i];
-        aux <<= 20;
-        res_sbox |= aux;
+        chave[i] = S4[posicao];
       break;
       case 4:
-        chave[i] = S4[posicao];
-        aux = chave[i];
-        aux <<= 16;
-        res_sbox |= aux;
+        chave[i] = S5[posicao];
       break;
       case 5:
-        chave[i] = S5[posicao];
-        aux = chave[i];
-        aux <<= 12;
-        res_sbox |= aux;
+        chave[i] = S6[posicao];
       break;
       case 6:
-        chave[i] = S6[posicao];
-        aux = chave[i];
-        aux <<= 8;
-        res_sbox |= aux;
+        chave[i] = S7[posicao];
       break;
       case 7:
-        chave[i] = S7[posicao];
-        aux = chave[i];
-        aux <<= 4;
-        res_sbox |= aux;
-      break;
-      case 8:
         chave[i] = S8[posicao];
-        aux = chave[i];
-        res_sbox |= aux;
       break;
     }
+    aux = chave[i];
+    if(i%2 == 0){
+      aux <<= 4;
+    }
+    res_sbox[i/2] |= aux;
     posicao = 0;
   }
 
@@ -257,12 +240,21 @@ unsigned int funcoes_selecao(unsigned char *chave){
 
 /* 7. XOR entre L e resultado proveniente das S-box */
 unsigned char * xor_ultimo(unsigned char *Linicial, unsigned char *S){
+  unsigned char res_xor[4];
 
+  for(int i = 0; i < 4; i++){
+    res_xor[i] = Linicial[i] ^ S[i];
+  }
+
+  return res_xor;
 }
 
 /* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
 unsigned char * permutacao_reversa(unsigned char *G, unsigned char *D){
-
+  unsigned char P[32] = { 16, 7, 20, 21, 29, 12, 28, 17,
+                          1, 15, 23, 26, 5, 18, 31, 10,
+                          2, 8, 24, 14, 32, 27, 3, 9,
+                          19, 13, 30, 6, 22, 11, 4, 25};
 }
 
 
