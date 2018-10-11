@@ -48,9 +48,6 @@ void main(){
     permutacao_inicial(entrada);
     divide_bloco(entrada, L, R);
 
-    E = malloc(48 * sizeof(unsigned char));
-      E = expansao(R);
-      /*
     // round de 16 passos
     for(int i = 0; i < 16; i++){
       atribui(Lfinal, R);
@@ -59,7 +56,6 @@ void main(){
 
       atribui(L, Lfinal);
     }
-    */
 }
 
 void permutacao_inicial(unsigned char *hexa){
@@ -135,8 +131,8 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
   for(int i = 0; i < 4; i++){
     G[i] = 0;
     G[i] = hexa[i];
-    D[j] = 0;
-    D[j] = hexa[i+4];
+    D[i] = 0;
+    D[i] = hexa[i+4];
   }
 }
 
@@ -173,6 +169,7 @@ unsigned char* expansao(unsigned char *D){
         printf("%2x ", expanded[i]); 
     }
     printf("\n");
+    return expanded;
 }
 
 /* 3. faz o deslocamento de chave (rotação)
