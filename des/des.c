@@ -6,12 +6,12 @@
 /*
  unsigned char E[48] = {
                     0x20, 0x01, 0x02, 0x03, 0x04, 0x05,
-                    0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 
-                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 
-                    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 
-                    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 
+                    0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11,
+                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+                    0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
+                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D,
                     0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x01
                 };
 */
@@ -20,68 +20,71 @@
 void permutacao_inicial(unsigned char *hexa);
 void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
 void expansao(unsigned char *D, unsigned char *E);
+void pc1(unsigned char *chave, unsigned char *pc_1);
 
 // funções auxiliares
 void print_bin(unsigned char num);
-void print_hex(unsigned char *vetor, int tam);
-void atribui(unsigned char *v1, unsigned char *v2);
+void print_saida(unsigned char *vetor, short int tam);
+void atribui(unsigned char *v1, unsigned char *v2, short int tam);
 unsigned char reverseBits(unsigned char num);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[8];
+    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7];
 
     // primeiro setando direto pra ver se os valores batem
-    entrada[0] = 0x67;
-    entrada[1] = 0x5A;
-    entrada[2] = 0x69;
-    entrada[3] = 0x67;
-    entrada[4] = 0x5E;
-    entrada[5] = 0x5A;
-    entrada[6] = 0x6B;
-    entrada[7] = 0x5A;
+    entrada[0] = 0x69;
+    entrada[1] = 0x6E;
+    entrada[2] = 0x74;
+    entrada[3] = 0x72;
+    entrada[4] = 0x6F;
+    entrada[5] = 0x64;
+    entrada[6] = 0x75;
+    entrada[7] = 0x63;
 
     /*
-       for (int i = 0; i < 8; i++) {
-       scanf("%2x", &entrada[i]);
-       }
-       */
+    for (int i = 0; i < 8; i++) {
+        scanf("%2hhx", &entrada[i]);
+    }
+    */
+
+    printf("PLAIN TEXT\n");
+    print_saida(entrada, 8);
 
     permutacao_inicial(entrada);
+
+    chave[0] = 0x31;
+    chave[1] = 0x32;
+    chave[2] = 0x33;
+    chave[3] = 0x34;
+    chave[4] = 0x35;
+    chave[5] = 0x36;
+    chave[6] = 0x37;
+    chave[7] = 0x38;
+
+    /*
+    for (int i = 0; i < 8; i++) {
+        scanf("%2hhx", &chave[i]);
+    }
+    */
+
+    printf("CHAVE\n");
+    print_saida(chave, 8);
+
     divide_bloco(entrada, L, R);
+    pc1(chave, pc_1);
+    print_saida(pc_1, 7);
 
     // round de 16 passos
     for(int i = 0; i < 16; i++){
-        atribui(Lfinal, R);
-
+        atribui(Lfinal, R, 4);
         expansao(R, E);
-        printf("Vetor expandido: \n");
-        print_hex(E, 8);    
-
-        atribui(L, Lfinal);
+        // printf("Vetor expandido: \n");
+        // print_saida(E, 6);    
+        atribui(L, Lfinal, 4);
     }
 }
 
 void permutacao_inicial(unsigned char *hexa){
-/*
- *  PASSOS:
- *  1. aplicar a máscara em cada posição do vetor na ordem correta
- *  2. concatena o resultado de todas as posições com as máscaras
- *  no vetor resultante
- *      obs: para 'concatenar' os números, devemos fazer um | entre
- *      o número atual e o novo número (resultado da aplicação da
- *      máscara)
- */
-    /*
-        unsigned int mascara_1 = 128;
-        unsigned int mascara_2 = 64;
-        unsigned int mascara_3 = 32;
-        unsigned int mascara_4 = 16;
-        unsigned int mascara_5 = 8;
-        unsigned int mascara_6 = 4;
-        unsigned int mascara_7 = 2;
-        unsigned int mascara_8 = 1;
-    */
-
     unsigned char mascaras[8];   // mascaras de bit
     unsigned char permutado[8];  // vetor final
     int shift_counter[8];       // vetor de valores usados nos shifts.
@@ -89,7 +92,6 @@ void permutacao_inicial(unsigned char *hexa){
     // ordem das linhas da tabela inicial para a tabela final.
     // 2,4,6,8,1,3,5,7
     static int ordem_permutacao[8] = {1,3,5,7,0,2,4,6};
-
 
     // mascaras inicializadas com potências de 2
     int j = 0;
@@ -108,7 +110,6 @@ void permutacao_inicial(unsigned char *hexa){
     for (int i = 0; i < 8; i++)
         permutado[i] = 0;
 
-    printf("\nApos permutacao inicial:\n");
     for(int j = 0; j < 8; j++) {
         for(int i = 0; i < 8; i++) {
             if (shift_counter[ordem_permutacao[j]] < 0)
@@ -118,12 +119,12 @@ void permutacao_inicial(unsigned char *hexa){
             shift_counter[ordem_permutacao[j]]++;
         }
         permutado[j] = reverseBits(permutado[j]);
-        printf("%2X ", permutado[j]);
     }
     // atribui valores a variavel de entrada
-    atribui(hexa, permutado);
+    atribui(hexa, permutado, 8);
 
-    printf("\n");
+    printf("IP\n");
+    print_saida(hexa, 8);
 }
 
 /* passos de cada round: https://br.ccm.net/contents/132-introducao-a-codificacao-des
@@ -143,24 +144,24 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
 void expansao(unsigned char *D, unsigned char *E){
     unsigned char M[48] = {
                 32, 1,  2,  3,  4,  5,
-                4,  5,  6,  7,  8,  9, 
-                8,  9,  10, 11, 12, 13, 
-                12, 13, 14, 15, 16, 17, 
-                16, 17, 18, 19, 20, 21, 
-                20, 21, 22, 23, 24, 25, 
-                24, 25, 26, 27, 28, 29, 
+                4,  5,  6,  7,  8,  9,
+                8,  9,  10, 11, 12, 13,
+                12, 13, 14, 15, 16, 17,
+                16, 17, 18, 19, 20, 21,
+                20, 21, 22, 23, 24, 25,
+                24, 25, 26, 27, 28, 29,
                 28, 29, 30, 31, 32, 1
             };
     unsigned char expandido[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned int mascara[8] = {1, 128, 64, 32, 16, 8, 4, 2};
-    unsigned char temp_bit = 0;
+    unsigned char temp_bit;
     int shift_counter, j = 0;
 
-    printf("Entrada para expansão:\n");
-    print_hex(D, 4);
+    // printf("Entrada para expansão:\n");
+    // print_saida(D, 4);
 
-    for (int i = 0; i < 8; i++) {
-        for (shift_counter = 5; shift_counter >= 0; shift_counter--) {
+    for (int i = 0; i < 6; i++) {
+        for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
             temp_bit = (D[(M[j]-1)/8] & mascara[M[j]%8]);
             if (temp_bit != 0)
                 temp_bit = 1 << shift_counter;
@@ -173,21 +174,60 @@ void expansao(unsigned char *D, unsigned char *E){
     }
 }
 
-/* 3. faz o deslocamento de chave (rotação)
-de tal maneira que os bits em segunda posição tomam a primeira posição,
-os em terceira posição a segunda, etc e os bits em primeira posição passam para a última posição.  */
-void desloca_chave(unsigned char *chave){
+/* 3. permutação inicial de chave (PC-1) 
+ *  seleciona 56 bits da chave de 64 e divide em 2 blocos
+ *  de 28 bits.
+ */
+void pc1(unsigned char *chave, unsigned char *pc_1){
+    unsigned char PC_1[56] = {
+                                57, 49, 41, 33, 25, 17, 9, 
+                                1, 58, 50, 42, 34, 26, 18, 
+                                10, 2, 59, 51, 43, 35, 27, 
+                                19, 11, 3, 60, 52, 44, 36,
+                                63, 55, 47, 39, 31, 23, 15, 
+                                7, 62, 54, 46, 38, 30, 22,
+                                14, 6, 61, 53, 45, 37, 29, 
+                                21, 13, 5, 28, 20, 12, 4 
+                            };
 
+    
+    unsigned char temp_bit = 0;
+    unsigned char permutado[7] = {0, 0, 0, 0, 0, 0, 0};
+    unsigned int mascara[9] = {1, 256, 128, 64, 32, 16, 8, 4, 2};
+    int shift_counter, j = 0;
+
+    for (int i = 0; i < 7; i++) {
+        for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
+            temp_bit = (chave[(PC_1[j]-1)/8] & mascara[PC_1[j]%8]);
+            if (temp_bit != 0)
+                temp_bit = 1 << shift_counter;
+            else
+                temp_bit = 0 << shift_counter;
+            permutado[i] |= temp_bit;
+            j++;
+        }
+        pc_1[i] = permutado[i];
+    }
 }
 
 /* 4. permutação CP-2 -> transforma 56 bits em 48 bits */
-void *cp2(unsigned char *chave){
+
+void pc2(unsigned char *chave){
+    unsigned char PC_2[48] = {
+                                14, 17, 11, 24, 1, 5, 
+                                3, 28, 15, 6, 21, 10, 
+                                23, 19, 12, 4, 26, 8, 
+                                16, 7, 27, 20, 13, 2, 
+                                41, 52, 31, 37, 47, 55, 
+                                30, 40, 51, 45, 33, 48, 
+                                44, 49, 39, 56, 34, 53, 
+                                46, 42, 50, 36, 29, 32
+                            };
 
 }
 
 /* 5. XOR entre texto expandido e chave (ambos 48 bits) */
-unsigned char * xor_primeiro(unsigned char *chave, unsigned char *E){
-
+void * xor_primeiro(unsigned char *chave, unsigned char *E){
 }
 
 /* 6. passa a resultado proveniente do XOR pelas S-box */
@@ -337,15 +377,15 @@ void print_bin(unsigned char num){
 }
 
 /* atribui o valor do vetor v2 para o vetor v1 */
-void atribui(unsigned char *v1, unsigned char *v2){
-  for(int i = 0; i < strlen(v1); i++){
+void atribui(unsigned char *v1, unsigned char *v2, short int tam){
+  for(short int i = 0; i < tam; i++){
     v1[i] = v2[i];
   }
 }
 
 /* printa as posições do vetor em hexa */
-void print_hex(unsigned char *vetor, int tam){
-    for (int i = 0; i < tam; i++) 
-        printf("%2x ", vetor[i]);
-    printf("\n");
+void print_saida(unsigned char *vetor, short int tam){
+  for(short int i = 0; i < tam; i++)
+    printf("%02X ", vetor[i]);
+  printf("\n\n");
 }
