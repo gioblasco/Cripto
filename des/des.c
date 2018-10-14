@@ -124,6 +124,7 @@ unsigned char reverseBits(unsigned char num);
 void main(){
     unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor1[6], res_sbox[4], res_permuta[4], res_xor2[4], texto[8];
     unsigned long long int C = 0, D = 0;
+    unsigned char teste[7] = {0x00, 0x01, 0xFF, 0xEC, 0xCF, 0x10, 0x1E};
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x69;
@@ -185,7 +186,7 @@ void main(){
         concatena_chave(pc_1, &C, &D);
         print_saida(pc_1, 7);
 
-        permuted_choice_2(pc_1, pc_2);
+        permuted_choice_2(teste, pc_2);
         printf("PC2: ");
         print_saida(pc_2, 6);
         print_saida(pc_2, 6);
@@ -301,12 +302,11 @@ void expansao(unsigned char *D, unsigned char *E){
 void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
     unsigned char temp_bit = 0;
     unsigned char permutado[7] = {0, 0, 0, 0, 0, 0, 0};
-    unsigned int mascara[8] = {256, 128, 64, 32, 16, 8, 4, 2};
     int shift_counter, j = 0;
 
     for (int i = 0; i < 7; i++) {
         for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
-            temp_bit = (chave[(PC_1[j]-1)/8] & mascara[PC_1[j]%8]);
+            temp_bit = chave[(PC_1[j]-1)/8] & 128 >> ((PC_1[j]-1)%8);
             if (temp_bit != 0)
                 temp_bit = 1 << shift_counter;
             else
@@ -363,12 +363,11 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
 void permuted_choice_2(unsigned char *chave, unsigned char *pc_2){
     unsigned char temp_bit = 0;
     unsigned char permutado[6] = {0, 0, 0, 0, 0, 0};
-    unsigned int mascara[8] = {256, 128, 64, 32, 16, 8, 4, 2};
     int shift_counter, j = 0;
 
     for (int i = 0; i < 6; i++) {
         for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
-            temp_bit = (chave[(PC_2[j]-1)/8] & mascara[PC_2[j]%8]);
+            temp_bit = chave[(PC_2[j]-1)/8] & 128 >> ((PC_2[j]-1)%8);
             if (temp_bit != 0)
                 temp_bit = 1 << shift_counter;
             else
