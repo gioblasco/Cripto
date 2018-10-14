@@ -3,18 +3,100 @@
 #include <math.h>
 #include <string.h>
 
-/*
- unsigned char E[48] = {
-                    0x20, 0x01, 0x02, 0x03, 0x04, 0x05,
-                    0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
-                    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11,
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
-                    0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D,
-                    0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x01
-                };
-*/
+//tabela de Expansao
+const unsigned char M[48] = {
+            32, 1,  2,  3,  4,  5,
+            4,  5,  6,  7,  8,  9,
+            8,  9,  10, 11, 12, 13,
+            12, 13, 14, 15, 16, 17,
+            16, 17, 18, 19, 20, 21,
+            20, 21, 22, 23, 24, 25,
+            24, 25, 26, 27, 28, 29,
+            28, 29, 30, 31, 32, 1
+        };
+
+// tabela PC1
+const unsigned char PC_1[56] = {
+                            57, 49, 41, 33, 25, 17, 9,
+                            1, 58, 50, 42, 34, 26, 18,
+                            10, 2, 59, 51, 43, 35, 27,
+                            19, 11, 3, 60, 52, 44, 36,
+                            63, 55, 47, 39, 31, 23, 15,
+                            7, 62, 54, 46, 38, 30, 22,
+                            14, 6, 61, 53, 45, 37, 29,
+                            21, 13, 5, 28, 20, 12, 4
+                        };
+
+// tabela PC2
+const unsigned char PC_2[48] = {
+                            14, 17, 11, 24, 1, 5,
+                            3, 28, 15, 6, 21, 10,
+                            23, 19, 12, 4, 26, 8,
+                            16, 7, 27, 20, 13, 2,
+                            41, 52, 31, 37, 47, 55,
+                            30, 40, 51, 45, 33, 48,
+                            44, 49, 39, 56, 34, 53,
+                            46, 42, 50, 36, 29, 32
+                        };
+
+const int tabela_shift[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
+
+// tabelas constantes Sbox
+const unsigned char S1[64] = { 14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
+                               0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
+                               4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0,
+                               15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13 };
+
+const unsigned char S2[64] = { 15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10,
+                               3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5,
+                               0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15,
+                               13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9 };
+
+const unsigned char S3[64] = { 10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8,
+                               13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1,
+                               13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7,
+                               1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12 };
+
+const unsigned char S4[64] = { 7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15,
+                               13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9,
+                               10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4,
+                               3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14 };
+
+const unsigned char S5[64] = { 2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9,
+                               14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6,
+                               4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14,
+                               11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3 };
+
+const unsigned char S6[64] = { 12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11,
+                               10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8,
+                               9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6,
+                               4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13 };
+
+const unsigned char S7[64] = { 4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1,
+                               13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6,
+                               1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2,
+                               6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12 };
+
+const unsigned char S8[64] = { 13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7,
+                               1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2,
+                               7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8,
+                               2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11 };
+
+// tabela permutação dos rounds
+unsigned char P[32] = { 16, 7, 20, 21, 29, 12, 28, 17,
+                       1, 15, 23, 26, 5, 18, 31, 10,
+                       2, 8, 24, 14, 32, 27, 3, 9,
+                       19, 13, 30, 6, 22, 11, 4, 25};
+
+// tabela permutação inversa
+unsigned char PI_1[64] = {40, 8, 48, 16, 56, 24, 64, 32,
+                         39, 7, 47, 15, 55, 23, 63, 31,
+                         38, 6, 46, 14, 54, 22, 62, 30,
+                         37, 5, 45, 13, 53, 21, 61, 29,
+                         36, 4, 44, 12, 52, 20, 60, 28,
+                         35, 3, 43, 11, 51, 19, 59, 27,
+                         34, 2, 42, 10, 50, 18, 58, 26,
+                         33, 1, 41, 9, 49, 17, 57, 25};
 
 // funções de tabela
 void permutacao_inicial(unsigned char *hexa);
@@ -40,8 +122,8 @@ void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long
 unsigned char reverseBits(unsigned char num);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor[6];
-    unsigned long long int C, D;
+    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor1[6], res_sbox[4], res_permuta[4], res_xor2[4], texto[8];
+    unsigned long long int C = 0, D = 0;
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x69;
@@ -63,8 +145,9 @@ void main(){
     print_saida(entrada, 8);
 
     permutacao_inicial(entrada);
-    printf("IP\n");
+    printf("\nIP\n");
     print_saida(entrada, 8);
+    atribui(texto, entrada, 8);
 
     chave[0] = 0x31;
     chave[1] = 0x32;
@@ -80,20 +163,23 @@ void main(){
         scanf("%2hhx", &chave[i]);
     }
     */
-    printf("CHAVE\n");
+    printf("\nCHAVE\n");
     print_saida(chave, 8);
 
-    divide_bloco(entrada, L, R);
     permuted_choice_1(chave, pc_1);
 
-    printf("PC1 - SELECIONA CHAVE\n");
+    printf("\nPC1 - SELECIONA CHAVE\n");
     print_saida(pc_1, 7);
     divide_chave(pc_1, &C, &D);
 
+    atribui(texto, entrada, 8);
+
     // round de 16 passos
     for(int i = 0; i < 1; i++){
+        divide_bloco(texto, L, R);
         atribui(Lfinal, R, 4);
-        printf("CHAVE DE ROUND %d\n", i+1);
+
+        printf("\nCHAVE DE ROUND %d\n", i+1);
         printf("Deslocamento: ");
         desloca_chave(&C, &D, i);
         concatena_chave(pc_1, &C, &D);
@@ -103,21 +189,34 @@ void main(){
         printf("PC2: ");
         print_saida(pc_2, 6);
 
-        printf("ROUND %d\n", i+1);
+        printf("\nROUND %d\n", i+1);
 
+        print_saida(texto, 8);
         expansao(R, E);
         printf("Expansao: ");
         print_saida(E, 6);
-        xor_primeiro(pc_2, E, res_xor);
+        xor_primeiro(pc_2, E, res_xor1);
         printf("Add Key: ");
-        print_saida(res_xor, 6);
+        print_saida(res_xor1, 6);
+        funcoes_selecao(res_xor1, res_sbox);
+        printf("S-box: ");
+        print_saida(res_sbox, 4);
+        permuta_final(res_sbox, res_permuta);
+        printf("Permuta: ");
+        print_saida(res_permuta, 4);
+        xor_ultimo(L, res_permuta, res_xor2);
+        printf("Add Left: ");
+        print_saida(res_xor2, 4);
 
+        atribui(R, res_xor2, 4);
         atribui(L, Lfinal, 4);
-        // printf("Add Key: ");
-        // printf("S-Bbox: ");
-        // printf("Permuta: ");
-        // printf("Add Left ");
-    }
+
+        swap(R, L, texto);
+        print_saida(texto, 8);
+}
+
+    //printf("Swap: ");
+    //printf("IP Inverso: ");
 }
 
 void permutacao_inicial(unsigned char *hexa){
@@ -175,23 +274,10 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
 
 /* 2. função de expansão: transforma 32 bits provenientes do vetor D e transforma em 48 bits */
 void expansao(unsigned char *D, unsigned char *E){
-    unsigned char M[48] = {
-                32, 1,  2,  3,  4,  5,
-                4,  5,  6,  7,  8,  9,
-                8,  9,  10, 11, 12, 13,
-                12, 13, 14, 15, 16, 17,
-                16, 17, 18, 19, 20, 21,
-                20, 21, 22, 23, 24, 25,
-                24, 25, 26, 27, 28, 29,
-                28, 29, 30, 31, 32, 1
-            };
     unsigned char expandido[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned int mascara[8] = {1, 128, 64, 32, 16, 8, 4, 2};
     unsigned char temp_bit;
     int shift_counter, j = 0;
-
-    // printf("Entrada para expansão:\n");
-    // print_saida(D, 4);
 
     for (int i = 0; i < 6; i++) {
         for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
@@ -212,18 +298,6 @@ void expansao(unsigned char *D, unsigned char *E){
  *  de 28 bits.
  */
 void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
-    unsigned char PC_1[56] = {
-                                57, 49, 41, 33, 25, 17, 9,
-                                1, 58, 50, 42, 34, 26, 18,
-                                10, 2, 59, 51, 43, 35, 27,
-                                19, 11, 3, 60, 52, 44, 36,
-                                63, 55, 47, 39, 31, 23, 15,
-                                7, 62, 54, 46, 38, 30, 22,
-                                14, 6, 61, 53, 45, 37, 29,
-                                21, 13, 5, 28, 20, 12, 4
-                            };
-
-
     unsigned char temp_bit = 0;
     unsigned char permutado[7] = {0, 0, 0, 0, 0, 0, 0};
     unsigned int mascara[8] = {256, 128, 64, 32, 16, 8, 4, 2};
@@ -245,7 +319,6 @@ void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
 
 /* 3.1 deslocamento de chave -> desloca a chave de acordo com a tabela */
 void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round){
-    int tabela_shift[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
     int shift = tabela_shift[round];
     unsigned long long int novo_bit_C;
     unsigned long long int novo_bit_D;
@@ -262,14 +335,14 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
         novo_bit_C = *D & msb_D;
 
         printf("\n");
-        printf("novo_bit_C: %llx\nnovo_bit_D: %llx\n", novo_bit_C, novo_bit_D);
+        printf("novo_bit_C: %llX\nnovo_bit_D: %llX\n", novo_bit_C, novo_bit_D);
 
-        printf("C: %llx\n", *C);
-        printf("D: %llx\n", *D);
+        printf("C: %llX\n", *C);
+        printf("D: %llX\n", *D);
         *C = (*C << 1) & mascara_C;
         *D = (*D << 1) & mascara_D;
-        printf("C: %llx\n", *C);
-        printf("D: %llx\n", *D);
+        printf("C: %llX\n", *C);
+        printf("D: %llX\n", *D);
 
         // inserir o bit no final para que o shift seja circular
         if (novo_bit_C > 0)
@@ -287,16 +360,6 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
 
 /* 4. permutação PC-2 -> transforma 56 bits em 48 bits */
 void permuted_choice_2(unsigned char *chave, unsigned char *pc_2){
-    unsigned char PC_2[48] = {
-                                14, 17, 11, 24, 1, 5,
-                                3, 28, 15, 6, 21, 10,
-                                23, 19, 12, 4, 26, 8,
-                                16, 7, 27, 20, 13, 2,
-                                41, 52, 31, 37, 47, 55,
-                                30, 40, 51, 45, 33, 48,
-                                44, 49, 39, 56, 34, 53,
-                                46, 42, 50, 36, 29, 32
-                            };
     unsigned char temp_bit = 0;
     unsigned char permutado[6] = {0, 0, 0, 0, 0, 0};
     unsigned int mascara[8] = {256, 128, 64, 32, 16, 8, 4, 2};
@@ -325,50 +388,7 @@ void xor_primeiro(unsigned char *chave, unsigned char *E, unsigned char *after_x
 
 /* 6. passa a resultado proveniente do XOR pelas S-box */
 void funcoes_selecao(unsigned char *xor, unsigned char *res_sbox){
-
   unsigned char posicao = 0, aux = 0;
-
-  // tabelas constantes Sbox -> colocar lá no cabeçalho
-  unsigned char S1[64] = { 14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
-                           0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
-                           4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0,
-                           15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13 };
-
-  unsigned char S2[64] = { 15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10,
-                           3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5,
-                           0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15,
-                           13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9 };
-
-  unsigned char S3[64] = { 10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8,
-                           13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1,
-                           13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7,
-                           1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12 };
-
-  unsigned char S4[64] = { 7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15,
-                           13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9,
-                           10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4,
-                           3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14 };
-
-  unsigned char S5[64] = { 2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9,
-                           14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6,
-                           4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14,
-                           11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3 };
-
-  unsigned char S6[64] = { 12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11,
-                           10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8,
-                           9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6,
-                           4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13 };
-
-  unsigned char S7[64] = { 4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1,
-                           13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6,
-                           1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2,
-                           6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12 };
-
-  unsigned char S8[64] = { 13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7,
-                           1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2,
-                           7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8,
-                           2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11 };
-
   for(short int i=0; i < 4; i++){
     res_sbox[i] = 0;
   }
@@ -402,15 +422,13 @@ void funcoes_selecao(unsigned char *xor, unsigned char *res_sbox){
 // Permuta
 void permuta_final(unsigned char *S, unsigned char *res_per){
   unsigned char aux;
-  unsigned char P[32] = { 16, 7, 20, 21, 29, 12, 28, 17,
-                          1, 15, 23, 26, 5, 18, 31, 10,
-                          2, 8, 24, 14, 32, 27, 3, 9,
-                          19, 13, 30, 6, 22, 11, 4, 25};
+  for(int i = 0; i < 32; i++){
+    aux = 128 >> ((P[i]-1)%8);
+    aux &= S[(P[i]-1)/8];
+    aux <<= ((P[i]-1)%8);
 
-  /* for(int i = 0; i < 32; i++){
-      aux = 0x80
-  } */
-
+    res_per[i/8] |= (aux >> i%8);
+  }
 }
 
 /* 7. XOR entre L e resultado proveniente da permuta final */ // Add Left
@@ -420,7 +438,7 @@ void xor_ultimo(unsigned char *Linicial, unsigned char *P, unsigned char *after_
   }
 }
 
-//L vai para o lugar do R e R vai para o lugar do L
+//L vai para o lugar do R e R vai para o lugar do L -> funciona tanto como swap, como para transformar os dois vetores em 1
 void swap(unsigned char *L, unsigned char *R, unsigned char *S){
   for(int i = 0; i<4; i++){
     S[i] = R[i];
@@ -429,16 +447,15 @@ void swap(unsigned char *L, unsigned char *R, unsigned char *S){
 }
 
 /* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
-void IP_inverso(unsigned char *G, unsigned char *D){
-  unsigned char PI_1[64] = {40, 8, 48, 16, 56, 24, 64, 32,
-                            39, 7, 47, 15, 55, 23, 63, 31,
-                            38, 6, 46, 14, 54, 22, 62, 30,
-                            37, 5, 45, 13, 53, 21, 61, 29,
-                            36, 4, 44, 12, 52, 20, 60, 28,
-                            35, 3, 43, 11, 51, 19, 59, 27,
-                            34, 2, 42, 10, 50, 18, 58, 26,
-                            33, 1, 41, 9, 49, 17, 57, 25};
+void IP_inverso(unsigned char *C, unsigned char *F){
+  unsigned char aux;
+  for(int i=0; i<64; i++){
+    aux = 128 >> ((PI_1[i]-1)%8);
+    aux &= C[(PI_1[i]-1)/8];
+    aux <<= ((PI_1[i]-1)%8);
 
+    F[i/8] |= (aux >> i%8);
+  }
 }
 
 
@@ -484,7 +501,7 @@ void atribui(unsigned char *v1, unsigned char *v2, short int tam){
 void print_saida(unsigned char *vetor, short int tam){
   for(short int i = 0; i < tam; i++)
     printf("%02X ", vetor[i]);
-  printf("\n\n");
+  printf("\n");
 }
 
 
