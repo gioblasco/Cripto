@@ -22,7 +22,13 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
 void expansao(unsigned char *D, unsigned char *E);
 void permuted_choice_1(unsigned char *chave, unsigned char *pc_1);
 void permuted_choice_2(unsigned char *chave, unsigned char *pc_2);
-//void permuted_choice_2(unsigned char *chave);
+void xor_primeiro(unsigned char *chave, unsigned char *E, unsigned char *after_xor1);
+void funcoes_selecao(unsigned char *chave, unsigned char *res);
+void permuta_final(unsigned char *S, unsigned char *res_per);
+void xor_ultimo(unsigned char *Linicial, unsigned char *P, unsigned char *after_xor2);
+void swap(unsigned char *L, unsigned char *R, unsigned char *S);
+void IP_inverso(unsigned char *G, unsigned char *D);
+
 
 // funções auxiliares
 void print_bin(unsigned char num);
@@ -34,7 +40,7 @@ void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long
 unsigned char reverseBits(unsigned char num);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6];
+    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor[6];
     unsigned long long int C, D;
 
     // primeiro setando direto pra ver se os valores batem
@@ -57,6 +63,8 @@ void main(){
     print_saida(entrada, 8);
 
     permutacao_inicial(entrada);
+    printf("IP\n");
+    print_saida(entrada, 8);
 
     chave[0] = 0x31;
     chave[1] = 0x32;
@@ -72,21 +80,19 @@ void main(){
         scanf("%2hhx", &chave[i]);
     }
     */
-
-    xor_primeiro(entrada, chave, Lfinal);
-
     printf("CHAVE\n");
     print_saida(chave, 8);
 
     divide_bloco(entrada, L, R);
     permuted_choice_1(chave, pc_1);
 
-    printf("PC-1 - SELECIONA CHAVE\n");
+    printf("PC1 - SELECIONA CHAVE\n");
     print_saida(pc_1, 7);
     divide_chave(pc_1, &C, &D);
 
     // round de 16 passos
     for(int i = 0; i < 1; i++){
+        atribui(Lfinal, R, 4);
         printf("CHAVE DE ROUND %d\n", i+1);
         printf("Deslocamento: ");
         desloca_chave(&C, &D, i);
@@ -96,13 +102,16 @@ void main(){
         permuted_choice_2(pc_1, pc_2);
         printf("PC2: ");
         print_saida(pc_2, 6);
-        atribui(Lfinal, R, 4);
 
         printf("ROUND %d\n", i+1);
 
         expansao(R, E);
         printf("Expansao: ");
-        print_saida(E, 6);    
+        print_saida(E, 6);
+        xor_primeiro(pc_2, E, res_xor);
+        printf("Add Key: ");
+        print_saida(res_xor, 6);
+
         atribui(L, Lfinal, 4);
         // printf("Add Key: ");
         // printf("S-Bbox: ");
@@ -149,9 +158,6 @@ void permutacao_inicial(unsigned char *hexa){
     }
     // atribui valores a variavel de entrada
     atribui(hexa, permutado, 8);
-
-    printf("IP\n");
-    print_saida(hexa, 8);
 }
 
 /* passos de cada round: https://br.ccm.net/contents/132-introducao-a-codificacao-des
@@ -201,23 +207,23 @@ void expansao(unsigned char *D, unsigned char *E){
     }
 }
 
-/* 3. permutação inicial de chave (PC-1) 
+/* 3. permutação inicial de chave (PC-1)
  *  seleciona 56 bits da chave de 64 e divide em 2 blocos
  *  de 28 bits.
  */
 void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
     unsigned char PC_1[56] = {
-                                57, 49, 41, 33, 25, 17, 9, 
-                                1, 58, 50, 42, 34, 26, 18, 
-                                10, 2, 59, 51, 43, 35, 27, 
+                                57, 49, 41, 33, 25, 17, 9,
+                                1, 58, 50, 42, 34, 26, 18,
+                                10, 2, 59, 51, 43, 35, 27,
                                 19, 11, 3, 60, 52, 44, 36,
-                                63, 55, 47, 39, 31, 23, 15, 
+                                63, 55, 47, 39, 31, 23, 15,
                                 7, 62, 54, 46, 38, 30, 22,
-                                14, 6, 61, 53, 45, 37, 29, 
-                                21, 13, 5, 28, 20, 12, 4 
+                                14, 6, 61, 53, 45, 37, 29,
+                                21, 13, 5, 28, 20, 12, 4
                             };
 
-    
+
     unsigned char temp_bit = 0;
     unsigned char permutado[7] = {0, 0, 0, 0, 0, 0, 0};
     unsigned int mascara[8] = {256, 128, 64, 32, 16, 8, 4, 2};
@@ -247,7 +253,7 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
     unsigned long long int msb_C = 134217728;
     unsigned long long int msb_D = 9007199254740992;
     // máscaras para a separação da chave
-    unsigned long long mascara_D = 268435455; 
+    unsigned long long mascara_D = 268435455;
     unsigned long long mascara_C = 72057593769492480;
 
     for (int i = 0; i < tabela_shift[round]; i++){
@@ -256,39 +262,39 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
         novo_bit_C = *D & msb_D;
 
         printf("\n");
-        printf("novo_bit_C: %llx\nnovo_bit_D: %llx\n", novo_bit_C, novo_bit_D); 
-        
-        printf("C: %llx\n", *C); 
-        printf("D: %llx\n", *D); 
+        printf("novo_bit_C: %llx\nnovo_bit_D: %llx\n", novo_bit_C, novo_bit_D);
+
+        printf("C: %llx\n", *C);
+        printf("D: %llx\n", *D);
         *C = (*C << 1) & mascara_C;
         *D = (*D << 1) & mascara_D;
-        printf("C: %llx\n", *C); 
-        printf("D: %llx\n", *D); 
-        
+        printf("C: %llx\n", *C);
+        printf("D: %llx\n", *D);
+
         // inserir o bit no final para que o shift seja circular
         if (novo_bit_C > 0)
             novo_bit_C = 1;
-         
-        if(novo_bit_D > 0) 
+
+        if(novo_bit_D > 0)
             novo_bit_D  = 1;
-        
+
         *C |= novo_bit_C;
         *D |= novo_bit_D;
-        printf("C: %llx\n", *C); 
-        printf("D: %llx\n", *D); 
+        printf("C: %llx\n", *C);
+        printf("D: %llx\n", *D);
     }
 }
 
 /* 4. permutação PC-2 -> transforma 56 bits em 48 bits */
 void permuted_choice_2(unsigned char *chave, unsigned char *pc_2){
     unsigned char PC_2[48] = {
-                                14, 17, 11, 24, 1, 5, 
-                                3, 28, 15, 6, 21, 10, 
-                                23, 19, 12, 4, 26, 8, 
-                                16, 7, 27, 20, 13, 2, 
-                                41, 52, 31, 37, 47, 55, 
-                                30, 40, 51, 45, 33, 48, 
-                                44, 49, 39, 56, 34, 53, 
+                                14, 17, 11, 24, 1, 5,
+                                3, 28, 15, 6, 21, 10,
+                                23, 19, 12, 4, 26, 8,
+                                16, 7, 27, 20, 13, 2,
+                                41, 52, 31, 37, 47, 55,
+                                30, 40, 51, 45, 33, 48,
+                                44, 49, 39, 56, 34, 53,
                                 46, 42, 50, 36, 29, 32
                             };
     unsigned char temp_bit = 0;
@@ -311,18 +317,16 @@ void permuted_choice_2(unsigned char *chave, unsigned char *pc_2){
 }
 
 /* 5. XOR entre texto expandido e chave (ambos 48 bits) */
-void * xor_primeiro(unsigned char *chave, unsigned char *E, unsigned char *after_xor1){
-  unsigned char c[8] = { 0x50, 0x2C, 0xAC, 0x57, 0x2A, 0xC2 };
-  unsigned char ex[8] = { 0x00, 0x17, 0xFE, 0x8A, 0x7C, 0xF4 };
+void xor_primeiro(unsigned char *chave, unsigned char *E, unsigned char *after_xor1){
   for(int i = 0; i < 6; i++){
-    after_xor1[i] = c[i] ^ ex[i];
+    after_xor1[i] = chave[i] ^ E[i];
   }
 }
 
 /* 6. passa a resultado proveniente do XOR pelas S-box */
-unsigned char * funcoes_selecao(unsigned char *chave){
+void funcoes_selecao(unsigned char *xor, unsigned char *res_sbox){
 
-  unsigned char mascarafim = 1, mascarainicio = 32, mascarameio = 30, posicao = 0, aux = 0, res_sbox[4];
+  unsigned char posicao = 0, aux = 0;
 
   // tabelas constantes Sbox -> colocar lá no cabeçalho
   unsigned char S1[64] = { 14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
@@ -369,64 +373,72 @@ unsigned char * funcoes_selecao(unsigned char *chave){
     res_sbox[i] = 0;
   }
 
-  for(short int i = 0; i < 8; i++){
-    // posicao absoluta na lista da sbox com indice de linha e coluna calculado
-    posicao = ((chave[i] & mascarafim) | ((chave[i] & mascarainicio) >> 4)) * 16 + ((chave[i] & mascarameio) >> 1) + 1;
-    // cada bloco de 6 bits é substituído em um bloco de 4 bits
-    switch(i){
-      case 0:
-        chave[i] = S1[posicao];
-      break;
-      case 1:
-        chave[i] = S2[posicao];
-      break;
-      case 2:
-        chave[i] = S3[posicao];
-      break;
-      case 3:
-        chave[i] = S4[posicao];
-      break;
-      case 4:
-        chave[i] = S5[posicao];
-      break;
-      case 5:
-        chave[i] = S6[posicao];
-      break;
-      case 6:
-        chave[i] = S7[posicao];
-      break;
-      case 7:
-        chave[i] = S8[posicao];
-      break;
-    }
-    aux = chave[i];
-    if(i%2 == 0){
-      aux <<= 4;
-    }
-    res_sbox[i/2] |= aux;
-    posicao = 0;
-  }
+  // final | inicial + meio
+  posicao = (((xor[0] & 4) >> 2) | ((xor[0] & 128) >> 6)) * 16 + ((xor[0] & 120) >> 3);
+  res_sbox[0] |= S1[posicao] << 4;
 
- // return res_sbox;
+  posicao = (((xor[1] & 16) >> 4) | (xor[0] & 2)) * 16 + (((xor[1] & 224) >> 5) | ((xor[0] & 1) << 3));
+  res_sbox[0] |= S2[posicao];
+
+  posicao = (((xor[2] & 64) >> 6) | ((xor[1] & 8) >> 2)) * 16 + (((xor[2] & 128) >> 7) | ((xor[1] & 7) << 1));
+  res_sbox[1] |= S3[posicao] << 4;
+
+  posicao = ((xor[2] & 1) | ((xor[2] & 32) >> 4)) * 16 + ((xor[2] & 30) >> 1);
+  res_sbox[1] |= S4[posicao];
+
+  posicao = (((xor[3] & 4) >> 2) | ((xor[3] & 128) >> 6)) * 16 + ((xor[3] & 120) >> 3);
+  res_sbox[2] |= S5[posicao] << 4;
+
+  posicao = (((xor[4] & 16) >> 4) | (xor[3] & 2)) * 16 + (((xor[4] & 224) >> 5) | ((xor[3] & 1) << 3));
+  res_sbox[2] |= S6[posicao];
+
+  posicao = (((xor[5] & 64) >> 6) | ((xor[4] & 8) >> 2)) * 16 + (((xor[5] & 128) >> 7) | ((xor[4] & 7) << 1));
+  res_sbox[3] |= S7[posicao] << 4;
+
+  posicao = ((xor[5] & 1) | ((xor[5] & 32) >> 4)) * 16 + ((xor[5] & 30) >> 1);
+  res_sbox[3] |= S8[posicao];
 }
 
-/* 7. XOR entre L e resultado proveniente das S-box */
-unsigned char * xor_ultimo(unsigned char *Linicial, unsigned char *S){
-  unsigned char res_xor[4];
-
-  for(int i = 0; i < 4; i++){
-    res_xor[i] = Linicial[i] ^ S[i];
-  }
-
-//  return res_xor;
-}
-
-/* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
-unsigned char * permutacao_reversa(unsigned char *G, unsigned char *D){
+// Permuta
+void permuta_final(unsigned char *S, unsigned char *res_per){
+  unsigned char aux;
   unsigned char P[32] = { 16, 7, 20, 21, 29, 12, 28, 17,
                           1, 15, 23, 26, 5, 18, 31, 10,
                           2, 8, 24, 14, 32, 27, 3, 9,
                           19, 13, 30, 6, 22, 11, 4, 25};
+
+  /* for(int i = 0; i < 32; i++){
+      aux = 0x80
+  } */
+
+}
+
+/* 7. XOR entre L e resultado proveniente da permuta final */ // Add Left
+void xor_ultimo(unsigned char *Linicial, unsigned char *P, unsigned char *after_xor2){
+  for(int i = 0; i < 4; i++){
+    after_xor2[i] = Linicial[i] ^ P[i];
+  }
+}
+
+//L vai para o lugar do R e R vai para o lugar do L
+void swap(unsigned char *L, unsigned char *R, unsigned char *S){
+  for(int i = 0; i<4; i++){
+    S[i] = R[i];
+    S[i+4] = L[i];
+  }
+}
+
+/* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
+void IP_inverso(unsigned char *G, unsigned char *D){
+  unsigned char PI_1[64] = {40, 8, 48, 16, 56, 24, 64, 32,
+                            39, 7, 47, 15, 55, 23, 63, 31,
+                            38, 6, 46, 14, 54, 22, 62, 30,
+                            37, 5, 45, 13, 53, 21, 61, 29,
+                            36, 4, 44, 12, 52, 20, 60, 28,
+                            35, 3, 43, 11, 51, 19, 59, 27,
+                            34, 2, 42, 10, 50, 18, 58, 26,
+                            33, 1, 41, 9, 49, 17, 57, 25};
+
 }
 
 
@@ -481,8 +493,8 @@ void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned lon
     unsigned long long chave_int = 0;
     unsigned long long mascara_D, mascara_C;
 
-    chave_int = (unsigned long long) chave[0] << 48 | 
-                (unsigned long long) chave[1] << 40 | 
+    chave_int = (unsigned long long) chave[0] << 48 |
+                (unsigned long long) chave[1] << 40 |
                 (unsigned long long) chave[2] << 32 |
                 (unsigned long long) chave[3] << 24 |
                 (unsigned long long) chave[4] << 16 |
@@ -493,7 +505,7 @@ void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned lon
     // printf("%02llX\n", chave_int);
 
     // máscaras para a separação da chave
-    mascara_D = 268435455; 
+    mascara_D = 268435455;
     mascara_C = 72057593769492480;
 
     *C = chave_int & mascara_C;
@@ -505,6 +517,6 @@ void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long
     unsigned long long chave_concatenada = 0;
 
     chave_concatenada = *C | *D;
-    
+
     chave = (unsigned char *)&chave[7];
 }
