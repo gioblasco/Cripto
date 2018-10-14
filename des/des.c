@@ -229,7 +229,7 @@ int main(int argc, char **argv){
 
         swap(R, L, texto);
         print_saida(texto, 8);
-}
+    }
 
     swap(L, R, texto);
     printf("\nSwap: ");
@@ -342,19 +342,19 @@ void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
 /* 3.1 deslocamento de chave -> desloca a chave de acordo com a tabela */
 void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round){
     int shift = tabela_shift[round];
-    unsigned long long int novo_bit_C;
-    unsigned long long int novo_bit_D;
+    unsigned long long int novo_bit_C = 0;
+    unsigned long long int novo_bit_D = 0;
     // separa o bit mais significativo de cada meia-chave
     unsigned long long int msb_C = 134217728;
     unsigned long long int msb_D = 9007199254740992;
     // máscaras para a separação da chave
-    unsigned long long mascara_D = 268435455;
-    unsigned long long mascara_C = 72057593769492480;
+    unsigned long long int mascara_D = 268435455;
+    unsigned long long int mascara_C = 72057593769492480;
 
     for (int i = 0; i < tabela_shift[round]; i++){
         // aplicar a máscara pra pegar o bit mais significativo
         novo_bit_C = *C & msb_C;
-        novo_bit_C = *D & msb_D;
+        novo_bit_D = *D & msb_D;
 
         printf("\n");
         printf("novo_bit_C: %llX\nnovo_bit_D: %llX\n", novo_bit_C, novo_bit_D);
@@ -375,8 +375,8 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
 
         *C |= novo_bit_C;
         *D |= novo_bit_D;
-        printf("C: %llx\n", *C);
-        printf("D: %llx\n", *D);
+        printf("C: %llX\n", *C);
+        printf("D: %llX\n", *D);
     }
 }
 
