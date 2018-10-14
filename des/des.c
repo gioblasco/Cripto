@@ -188,6 +188,7 @@ void main(){
         permuted_choice_2(pc_1, pc_2);
         printf("PC2: ");
         print_saida(pc_2, 6);
+        print_saida(pc_2, 6);
 
         printf("\nROUND %d\n", i+1);
 
@@ -423,6 +424,7 @@ void funcoes_selecao(unsigned char *xor, unsigned char *res_sbox){
 void permuta_final(unsigned char *S, unsigned char *res_per){
   unsigned char aux;
   for(int i = 0; i < 32; i++){
+    //128 = 10000000b
     aux = 128 >> ((P[i]-1)%8);
     aux &= S[(P[i]-1)/8];
     aux <<= ((P[i]-1)%8);
@@ -450,6 +452,7 @@ void swap(unsigned char *L, unsigned char *R, unsigned char *S){
 void IP_inverso(unsigned char *C, unsigned char *F){
   unsigned char aux;
   for(int i=0; i<64; i++){
+    //128 = 10000000b
     aux = 128 >> ((PI_1[i]-1)%8);
     aux &= C[(PI_1[i]-1)/8];
     aux <<= ((PI_1[i]-1)%8);
