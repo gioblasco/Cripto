@@ -122,7 +122,7 @@ void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long
 unsigned char reverseBits(unsigned char num);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor1[6], res_sbox[4], res_permuta[4], res_xor2[4], texto[8];
+    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor1[6], res_sbox[4], res_permuta[4], res_xor2[4], texto[8], final[8];
     unsigned long long int C = 0, D = 0;
     unsigned char teste[7] = {0x00, 0x01, 0xFF, 0xEC, 0xCF, 0x10, 0x1E};
 
@@ -186,7 +186,8 @@ void main(){
         concatena_chave(pc_1, &C, &D);
         print_saida(pc_1, 7);
 
-        permuted_choice_2(teste, pc_2);
+        //permuted_choice_2(teste, pc_2);
+        permuted_choice_2(pc_1, pc_2);
         printf("PC2: ");
         print_saida(pc_2, 6);
         print_saida(pc_2, 6);
@@ -217,8 +218,13 @@ void main(){
         print_saida(texto, 8);
 }
 
-    //printf("Swap: ");
-    //printf("IP Inverso: ");
+    swap(L, R, texto);
+    printf("\nSwap: ");
+    print_saida(texto, 8);
+
+    permuta_final(texto, final);
+    printf("\nIP Inverso: ");
+    print_saida(final, 8);
 }
 
 void permutacao_inicial(unsigned char *hexa){
@@ -421,11 +427,13 @@ void funcoes_selecao(unsigned char *xor, unsigned char *res_sbox){
 
 // Permuta
 void permuta_final(unsigned char *S, unsigned char *res_per){
-  unsigned char aux;
+  unsigned char aux = 0;
+  for(int i = 0; i < 4; i++){
+    res_per[i] = 0;
+  }
   for(int i = 0; i < 32; i++){
     //128 = 10000000b
-    aux = 128 >> ((P[i]-1)%8);
-    aux &= S[(P[i]-1)/8];
+    aux = S[(P[i]-1)/8] & (128 >> ((P[i]-1)%8));
     aux <<= ((P[i]-1)%8);
 
     res_per[i/8] |= (aux >> i%8);
@@ -449,7 +457,10 @@ void swap(unsigned char *L, unsigned char *R, unsigned char *S){
 
 /* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
 void IP_inverso(unsigned char *C, unsigned char *F){
-  unsigned char aux;
+  unsigned char aux = 0;
+  for(int i = 0; i < 8; i++){
+    F[i] = 0;
+  }
   for(int i=0; i<64; i++){
     //128 = 10000000b
     aux = 128 >> ((PI_1[i]-1)%8);
