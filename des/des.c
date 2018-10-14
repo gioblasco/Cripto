@@ -3,33 +3,27 @@
 #include <math.h>
 #include <string.h>
 
-/*
- unsigned char E[48] = {
-                    0x20, 0x01, 0x02, 0x03, 0x04, 0x05,
-                    0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
-                    0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11,
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
-                    0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
-                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D,
-                    0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x01
-                };
-*/
 
 // funções de tabela
 void permutacao_inicial(unsigned char *hexa);
 void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
 void expansao(unsigned char *D, unsigned char *E);
-void pc1(unsigned char *chave, unsigned char *pc_1);
+void permuted_choice_1(unsigned char *chave, unsigned char *pc_1);
+void permuted_choice_2(unsigned char *chave, unsigned char *pc_2);
+//void permuted_choice_2(unsigned char *chave);
 
 // funções auxiliares
 void print_bin(unsigned char num);
 void print_saida(unsigned char *vetor, short int tam);
 void atribui(unsigned char *v1, unsigned char *v2, short int tam);
+void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round);
+void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned long long int *D);
+void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long long *D);
 unsigned char reverseBits(unsigned char num);
 
 void main(){
-    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7];
+    unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6];
+    unsigned long long int C, D;
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x69;
@@ -71,16 +65,35 @@ void main(){
     print_saida(chave, 8);
 
     divide_bloco(entrada, L, R);
-    pc1(chave, pc_1);
+    permuted_choice_1(chave, pc_1);
+
+    printf("PC-1 - SELECIONA CHAVE\n");
     print_saida(pc_1, 7);
+    divide_chave(pc_1, &C, &D);
 
     // round de 16 passos
-    for(int i = 0; i < 16; i++){
+    for(int i = 0; i < 1; i++){
+        printf("CHAVE DE ROUND %d\n", i+1);
+        printf("Deslocamento: ");
+        desloca_chave(&C, &D, i);
+        concatena_chave(pc_1, &C, &D);
+        print_saida(pc_1, 7);
+
+        permuted_choice_2(pc_1, pc_2);
+        printf("PC2: ");
+        print_saida(pc_2, 6);
         atribui(Lfinal, R, 4);
+
+        printf("ROUND %d\n", i+1);
+
         expansao(R, E);
-        // printf("Vetor expandido: \n");
-        // print_saida(E, 6);    
+        printf("Expansao: ");
+        print_saida(E, 6);    
         atribui(L, Lfinal, 4);
+        // printf("Add Key: ");
+        // printf("S-Bbox: ");
+        // printf("Permuta: ");
+        // printf("Add Left ");
     }
 }
 
@@ -178,7 +191,7 @@ void expansao(unsigned char *D, unsigned char *E){
  *  seleciona 56 bits da chave de 64 e divide em 2 blocos
  *  de 28 bits.
  */
-void pc1(unsigned char *chave, unsigned char *pc_1){
+void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
     unsigned char PC_1[56] = {
                                 57, 49, 41, 33, 25, 17, 9, 
                                 1, 58, 50, 42, 34, 26, 18, 
@@ -189,11 +202,9 @@ void pc1(unsigned char *chave, unsigned char *pc_1){
                                 14, 6, 61, 53, 45, 37, 29, 
                                 21, 13, 5, 28, 20, 12, 4 
                             };
-
-    
     unsigned char temp_bit = 0;
     unsigned char permutado[7] = {0, 0, 0, 0, 0, 0, 0};
-    unsigned int mascara[9] = {1, 256, 128, 64, 32, 16, 8, 4, 2};
+    unsigned int mascara[8] = {256, 128, 64, 32, 16, 8, 4, 2};
     int shift_counter, j = 0;
 
     for (int i = 0; i < 7; i++) {
@@ -210,9 +221,50 @@ void pc1(unsigned char *chave, unsigned char *pc_1){
     }
 }
 
-/* 4. permutação CP-2 -> transforma 56 bits em 48 bits */
+/* 3.1 deslocamento de chave -> desloca a chave de acordo com a tabela */
+void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round){
+    int tabela_shift[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
+    int shift = tabela_shift[round];
+    unsigned long long int novo_bit_C;
+    unsigned long long int novo_bit_D;
+    // separa o bit mais significativo de cada meia-chave
+    unsigned long long int msb_C = 134217728;
+    unsigned long long int msb_D = 9007199254740992;
+    // máscaras para a separação da chave
+    unsigned long long mascara_D = 268435455; 
+    unsigned long long mascara_C = 72057593769492480;
 
-void pc2(unsigned char *chave){
+    for (int i = 0; i < tabela_shift[round]; i++){
+        // aplicar a máscara pra pegar o bit mais significativo
+        novo_bit_C = *C & msb_C;
+        novo_bit_C = *D & msb_D;
+
+        printf("\n");
+        printf("novo_bit_C: %llx\nnovo_bit_D: %llx\n", novo_bit_C, novo_bit_D); 
+        
+        printf("C: %llx\n", *C); 
+        printf("D: %llx\n", *D); 
+        *C = (*C << 1) & mascara_C;
+        *D = (*D << 1) & mascara_D;
+        printf("C: %llx\n", *C); 
+        printf("D: %llx\n", *D); 
+        
+        // inserir o bit no final para que o shift seja circular
+        if (novo_bit_C > 0)
+            novo_bit_C = 1;
+         
+        if(novo_bit_D > 0) 
+            novo_bit_D  = 1;
+        
+        *C |= novo_bit_C;
+        *D |= novo_bit_D;
+        printf("C: %llx\n", *C); 
+        printf("D: %llx\n", *D); 
+    }
+}
+
+/* 4. permutação PC-2 -> transforma 56 bits em 48 bits */
+void permuted_choice_2(unsigned char *chave, unsigned char *pc_2){
     unsigned char PC_2[48] = {
                                 14, 17, 11, 24, 1, 5, 
                                 3, 28, 15, 6, 21, 10, 
@@ -223,7 +275,23 @@ void pc2(unsigned char *chave){
                                 44, 49, 39, 56, 34, 53, 
                                 46, 42, 50, 36, 29, 32
                             };
+    unsigned char temp_bit = 0;
+    unsigned char permutado[6] = {0, 0, 0, 0, 0, 0};
+    unsigned int mascara[8] = {256, 128, 64, 32, 16, 8, 4, 2};
+    int shift_counter, j = 0;
 
+    for (int i = 0; i < 6; i++) {
+        for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
+            temp_bit = (chave[(PC_2[j]-1)/8] & mascara[PC_2[j]%8]);
+            if (temp_bit != 0)
+                temp_bit = 1 << shift_counter;
+            else
+                temp_bit = 0 << shift_counter;
+            permutado[i] |= temp_bit;
+            j++;
+        }
+        pc_2[i] = permutado[i];
+    }
 }
 
 /* 5. XOR entre texto expandido e chave (ambos 48 bits) */
@@ -342,11 +410,8 @@ unsigned char * permutacao_reversa(unsigned char *G, unsigned char *D){
 
 
 
-/*
- * função retirada de https://www.geeksforgeeks.org/write-an-efficient-c-program-to-reverse-bits-of-a-number/
- */
+/* função retirada de https://www.geeksforgeeks.org/write-an-efficient-c-program-to-reverse-bits-of-a-number/ */
 unsigned char reverseBits(unsigned char num) {
-    // sizeof é o tamanho em BYTESSSS
     unsigned char count = sizeof(num) * 8 - 1;
     unsigned char reverse_num = num;
 
@@ -367,7 +432,6 @@ void print_bin(unsigned char num){
 
     for(int c = 31; c > 0; c--) {
         k = num >> c;
-
         if (k & 1)
             printf("1");
         else
@@ -388,4 +452,38 @@ void print_saida(unsigned char *vetor, short int tam){
   for(short int i = 0; i < tam; i++)
     printf("%02X ", vetor[i]);
   printf("\n\n");
+}
+
+
+/* divide chave para o PC2 */
+void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned long long *D){
+    unsigned long long chave_int = 0;
+    unsigned long long mascara_D, mascara_C;
+
+    chave_int = (unsigned long long) chave[0] << 48 | 
+                (unsigned long long) chave[1] << 40 | 
+                (unsigned long long) chave[2] << 32 |
+                (unsigned long long) chave[3] << 24 |
+                (unsigned long long) chave[4] << 16 |
+                (unsigned long long) chave[5] << 8  |
+                (unsigned long long) chave[6];
+
+    // printf("chave unsigned int: ");
+    // printf("%02llX\n", chave_int);
+
+    // máscaras para a separação da chave
+    mascara_D = 268435455; 
+    mascara_C = 72057593769492480;
+
+    *C = chave_int & mascara_C;
+    *D = chave_int & mascara_D;
+}
+
+/* concatena as chaves separadas e faz o cast para o PC2 */
+void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long long *D){
+    unsigned long long chave_concatenada = 0;
+
+    chave_concatenada = *C | *D;
+    
+    chave = (unsigned char *)&chave[7];
 }
