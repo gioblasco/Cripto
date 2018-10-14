@@ -121,10 +121,10 @@ void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned lon
 void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long long *D);
 unsigned char reverseBits(unsigned char num);
 
-void main(){
+int main(int argc, char **argv){
     unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor1[6], res_sbox[4], res_permuta[4], res_xor2[4], texto[8], final[8];
     unsigned long long int C = 0, D = 0;
-    unsigned char teste[7] = {0x00, 0x01, 0xFF, 0xEC, 0xCF, 0x10, 0x1E};
+    FILE *entfile, *chavefile;
 
     // primeiro setando direto pra ver se os valores batem
     entrada[0] = 0x69;
@@ -136,20 +136,6 @@ void main(){
     entrada[6] = 0x75;
     entrada[7] = 0x63;
 
-    /*
-    for (int i = 0; i < 8; i++) {
-        scanf("%2hhx", &entrada[i]);
-    }
-    */
-
-    printf("PLAIN TEXT\n");
-    print_saida(entrada, 8);
-
-    permutacao_inicial(entrada);
-    printf("\nIP\n");
-    print_saida(entrada, 8);
-    atribui(texto, entrada, 8);
-
     chave[0] = 0x31;
     chave[1] = 0x32;
     chave[2] = 0x33;
@@ -160,10 +146,38 @@ void main(){
     chave[7] = 0x38;
 
     /*
-    for (int i = 0; i < 8; i++) {
-        scanf("%2hhx", &chave[i]);
+    if(argc != 3){
+      printf("Chamada errada! Argumentos: ./des arquivo_texto arquivo_chave\n");
+      return 0;
     }
+
+    entfile = fopen(argv[1], "r");
+    if(!entfile){
+      printf("Erro ao abrir arquivo de entrada!");
+    }
+    for (int i = 0; i < 8; i++) {
+        fscanf(entfile, "%2hhx", &entrada[i]);
+    }
+    fclose(entfile);
+
+    chavefile = fopen(argv[2], "r");
+    if(!chavefile){
+      printf("Erro ao abrir arquivo da chave!");
+    }
+    for (int i = 0; i < 8; i++) {
+        fscanf(chavefile, "%2hhx", &chave[i]);
+    }
+    fclose(chavefile);
     */
+
+    printf("PLAIN TEXT\n");
+    print_saida(entrada, 8);
+
+    permutacao_inicial(entrada);
+    printf("\nIP\n");
+    print_saida(entrada, 8);
+    atribui(texto, entrada, 8);
+
     printf("\nCHAVE\n");
     print_saida(chave, 8);
 
@@ -186,7 +200,6 @@ void main(){
         concatena_chave(pc_1, &C, &D);
         print_saida(pc_1, 7);
 
-        //permuted_choice_2(teste, pc_2);
         permuted_choice_2(pc_1, pc_2);
         printf("PC2: ");
         print_saida(pc_2, 6);
@@ -225,6 +238,8 @@ void main(){
     permuta_final(texto, final);
     printf("\nIP Inverso: ");
     print_saida(final, 8);
+
+    return 0;
 }
 
 void permutacao_inicial(unsigned char *hexa){
