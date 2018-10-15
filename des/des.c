@@ -234,10 +234,12 @@ int main(int argc, char **argv){
 }
 
 void permutacao_inicial(unsigned char *hexa){
+    int k, l;
+    
+    /*
     unsigned char mascaras[8];   // mascaras de bit
     unsigned char permutado[8];  // vetor final
     int shift_counter[8];       // vetor de valores usados nos shifts.
-
     // ordem das linhas da tabela inicial para a tabela final.
     // 2,4,6,8,1,3,5,7
     static int ordem_permutacao[8] = {1,3,5,7,0,2,4,6};
@@ -255,9 +257,6 @@ void permutacao_inicial(unsigned char *hexa){
         j++;
     }
 
-    // vetor final inicializado com zeros
-    for (int i = 0; i < 8; i++)
-        permutado[i] = 0;
 
     for(int j = 0; j < 8; j++) {
         for(int i = 0; i < 8; i++) {
@@ -268,7 +267,22 @@ void permutacao_inicial(unsigned char *hexa){
             shift_counter[ordem_permutacao[j]]++;
         }
         permutado[j] = reverseBits(permutado[j]);
+    }*/
+
+    // vetor final inicializado com zeros
+    for (int i = 0; i < 8; i++)
+        permutado[i] = 0;
+
+    for (int j = 0; j < 4; j++){
+      k = j*2;
+      l = 0;
+      for(int i = 7; i >= 0; i--){
+        permutado[j+4] |= ((hexa[i]&(128>>k)) << k) >> l;
+        permutado[j] |= ((hexa[i]&(128>>(k+1))) << (k+1)) >> l;
+        l++;
+      }
     }
+
     // atribui valores a variavel de entrada
     atribui(hexa, permutado, 8);
 }
