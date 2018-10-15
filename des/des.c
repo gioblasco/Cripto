@@ -88,16 +88,6 @@ unsigned char P[32] = { 16, 7, 20, 21, 29, 12, 28, 17,
                        2, 8, 24, 14, 32, 27, 3, 9,
                        19, 13, 30, 6, 22, 11, 4, 25};
 
-// tabela permutação inversa
-unsigned char PI_1[64] = {40, 8, 48, 16, 56, 24, 64, 32,
-                         39, 7, 47, 15, 55, 23, 63, 31,
-                         38, 6, 46, 14, 54, 22, 62, 30,
-                         37, 5, 45, 13, 53, 21, 61, 29,
-                         36, 4, 44, 12, 52, 20, 60, 28,
-                         35, 3, 43, 11, 51, 19, 59, 27,
-                         34, 2, 42, 10, 50, 18, 58, 26,
-                         33, 1, 41, 9, 49, 17, 57, 25};
-
 // funções de tabela
 void permutacao_inicial(unsigned char *hexa);
 void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
@@ -236,7 +226,7 @@ int main(int argc, char **argv){
     printf("\nSwap: ");
     print_saida(texto, 8);
 
-    permuta_final(texto, final);
+    IP_inverso(texto, final);
     printf("\nIP Inverso: ");
     print_saida(final, 8);
 
@@ -365,9 +355,9 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
         if (novo_bit_C > 0)
             novo_bit_C = 1 << 28;
 
-        if(novo_bit_D > 0) 
+        if(novo_bit_D > 0)
             novo_bit_D  = 1;
-        
+
         *C = temp_C | novo_bit_C;
         *D = temp_D | novo_bit_D;
     }
@@ -465,18 +455,22 @@ void swap(unsigned char *L, unsigned char *R, unsigned char *S){
 
 /* apos todas as iteracoes, é feita uma ultima permuta com os vetores G e D resultantes */
 void IP_inverso(unsigned char *C, unsigned char *F){
-  unsigned char aux = 0;
-  for(int i = 0; i < 8; i++){
-    F[i] = 0;
-  }
-  for(int i=0; i<64; i++){
-    //128 = 10000000b
-    aux = 128 >> ((PI_1[i]-1)%8);
-    aux &= C[(PI_1[i]-1)/8];
-    aux <<= ((PI_1[i]-1)%8);
+  int k = 7, l;
 
-    F[i/8] |= (aux >> i%8);
+  for (int i = 0; i < 8; i++)
+      F[i] = 0;
+
+  for(int j = 0; j < 8; j++){
+    l = 0;
+    for(int i = 0; i < 4; i++){
+      F[k] |= ((C[i+4]&(128>>j)) << j) >> l;
+      l++;
+      F[k] |= ((C[i]&(128>>j)) << j) >> l;
+      l++;
+    }
+    k--;
   }
+
 }
 
 
@@ -558,6 +552,6 @@ void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long
     for (int i = 6; i >= 0; i--) {
         chave[j] = (chave_concatenada >> 8*i) & 0xFF;
         j++;
-            
+
     }
 }
