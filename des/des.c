@@ -113,7 +113,8 @@ void IP_inverso(unsigned char *G, unsigned char *D);
 
 
 // funções auxiliares
-void print_bin(unsigned char num);
+// void print_bin(unsigned char num);
+void print_bin(unsigned long long num);
 void print_saida(unsigned char *vetor, short int tam);
 void atribui(unsigned char *v1, unsigned char *v2, short int tam);
 void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round);
@@ -190,7 +191,7 @@ int main(int argc, char **argv){
     atribui(texto, entrada, 8);
 
     // round de 16 passos
-    for(int i = 0; i < 1; i++){
+    for(int i = 0; i < 16; i++){
         divide_bloco(texto, L, R);
         atribui(Lfinal, R, 4);
 
@@ -342,6 +343,7 @@ void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
 /* 3.1 deslocamento de chave -> desloca a chave de acordo com a tabela */
 void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round){
     int shift = tabela_shift[round];
+    unsigned long long temp_C, temp_D;
     unsigned long long int novo_bit_C = 0;
     unsigned long long int novo_bit_D = 0;
     // separa o bit mais significativo de cada meia-chave
@@ -356,27 +358,18 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
         novo_bit_C = *C & msb_C;
         novo_bit_D = *D & msb_D;
 
-        printf("\n");
-        printf("novo_bit_C: %llX\nnovo_bit_D: %llX\n", novo_bit_C, novo_bit_D);
-
-        printf("C: %llX\n", *C);
-        printf("D: %llX\n", *D);
-        *C = (*C << 1) & mascara_C;
-        *D = (*D << 1) & mascara_D;
-        printf("C: %llX\n", *C);
-        printf("D: %llX\n", *D);
+        temp_C = (*C << 1) & mascara_C;
+        temp_D = (*D << 1) & mascara_D;
 
         // inserir o bit no final para que o shift seja circular
         if (novo_bit_C > 0)
-            novo_bit_C = 1;
+            novo_bit_C = 1 << 28;
 
-        if(novo_bit_D > 0)
+        if(novo_bit_D > 0) 
             novo_bit_D  = 1;
-
-        *C |= novo_bit_C;
-        *D |= novo_bit_D;
-        printf("C: %llX\n", *C);
-        printf("D: %llX\n", *D);
+        
+        *C = temp_C | novo_bit_C;
+        *D = temp_D | novo_bit_D;
     }
 }
 
@@ -505,10 +498,10 @@ unsigned char reverseBits(unsigned char num) {
     return reverse_num;
 }
 
-void print_bin(unsigned char num){
+void print_bin(unsigned long long num){
     int k;
 
-    for(int c = 31; c > 0; c--) {
+    for(int c = 63; c > 0; c--) {
         k = num >> c;
         if (k & 1)
             printf("1");
@@ -546,9 +539,6 @@ void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned lon
                 (unsigned long long) chave[5] << 8  |
                 (unsigned long long) chave[6];
 
-    // printf("chave unsigned int: ");
-    // printf("%02llX\n", chave_int);
-
     // máscaras para a separação da chave
     mascara_D = 268435455;
     mascara_C = 72057593769492480;
@@ -560,8 +550,14 @@ void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned lon
 /* concatena as chaves separadas e faz o cast para o PC2 */
 void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long long *D){
     unsigned long long chave_concatenada = 0;
+    unsigned char chave_temp[8];
 
     chave_concatenada = *C | *D;
 
-    chave = (unsigned char *)&chave[7];
+    int j = 0;
+    for (int i = 6; i >= 0; i--) {
+        chave[j] = (chave_concatenada >> 8*i) & 0xFF;
+        j++;
+            
+    }
 }
