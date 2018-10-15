@@ -117,7 +117,7 @@ int main(int argc, char **argv){
     unsigned long long int C = 0, D = 0;
     FILE *entfile, *chavefile;
 
-    // primeiro setando direto pra ver se os valores batem
+    /*
     entrada[0] = 0x69;
     entrada[1] = 0x6E;
     entrada[2] = 0x74;
@@ -135,8 +135,8 @@ int main(int argc, char **argv){
     chave[5] = 0x36;
     chave[6] = 0x37;
     chave[7] = 0x38;
+    */
 
-    /*
     if(argc != 3){
       printf("Chamada errada! Argumentos: ./des arquivo_texto arquivo_chave\n");
       return 0;
@@ -159,7 +159,7 @@ int main(int argc, char **argv){
         fscanf(chavefile, "%2hhx", &chave[i]);
     }
     fclose(chavefile);
-    */
+
 
     printf("PLAIN TEXT\n");
     print_saida(entrada, 8);
