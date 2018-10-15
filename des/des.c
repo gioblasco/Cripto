@@ -88,7 +88,11 @@ unsigned char P[32] = { 16, 7, 20, 21, 29, 12, 28, 17,
                        2, 8, 24, 14, 32, 27, 3, 9,
                        19, 13, 30, 6, 22, 11, 4, 25};
 
-// funções de tabela
+// máscaras para a separação da chave em sub-chaves C e D
+unsigned long long int mascara_D = 268435455;  //0000000000000000000000000000000000001111111111111111111111111111
+unsigned long long int mascara_C = 72057593769492480; //0000000011111111111111111111111111110000000000000000000000000000
+
+/* FUNÇÕES DE TABELA */
 void permutacao_inicial(unsigned char *hexa);
 void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
 void expansao(unsigned char *D, unsigned char *E);
@@ -101,50 +105,26 @@ void xor_ultimo(unsigned char *Linicial, unsigned char *P, unsigned char *after_
 void swap(unsigned char *L, unsigned char *R, unsigned char *S);
 void IP_inverso(unsigned char *G, unsigned char *D);
 
-
-// funções auxiliares
-// void print_bin(unsigned char num);
-void print_bin(unsigned long long num);
+/* FUNÇÕES AUXILIARES */
 void print_saida(unsigned char *vetor, short int tam);
 void atribui(unsigned char *v1, unsigned char *v2, short int tam);
 void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round);
-void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned long long int *D);
-void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long long *D);
-unsigned char reverseBits(unsigned char num);
+void divide_chave(unsigned char *chave, unsigned long long int *C, unsigned long long int *D);
+void concatena_chave(unsigned char *chave, unsigned long long *C, unsigned long long *D);
 
 int main(int argc, char **argv){
     unsigned char entrada[8], chave[8], L[4], Lfinal[4], R[4], E[6], pc_1[7], pc_2[6], res_xor1[6], res_sbox[4], res_permuta[4], res_xor2[4], texto[8], final[8];
     unsigned long long int C = 0, D = 0;
     FILE *entfile, *chavefile;
 
-    /*
-    entrada[0] = 0x69;
-    entrada[1] = 0x6E;
-    entrada[2] = 0x74;
-    entrada[3] = 0x72;
-    entrada[4] = 0x6F;
-    entrada[5] = 0x64;
-    entrada[6] = 0x75;
-    entrada[7] = 0x63;
-
-    chave[0] = 0x31;
-    chave[1] = 0x32;
-    chave[2] = 0x33;
-    chave[3] = 0x34;
-    chave[4] = 0x35;
-    chave[5] = 0x36;
-    chave[6] = 0x37;
-    chave[7] = 0x38;
-    */
-
     if(argc != 3){
-      printf("Chamada errada! Argumentos: ./des arquivo_texto arquivo_chave\n");
-      return 0;
+        printf("Chamada errada! Argumentos: ./des arquivo_texto arquivo_chave\n");
+        return 0;
     }
 
     entfile = fopen(argv[1], "r");
     if(!entfile){
-      printf("Erro ao abrir arquivo de entrada!");
+        printf("Erro ao abrir arquivo de entrada!");
     }
     for (int i = 0; i < 8; i++) {
         fscanf(entfile, "%2hhx", &entrada[i]);
@@ -153,7 +133,7 @@ int main(int argc, char **argv){
 
     chavefile = fopen(argv[2], "r");
     if(!chavefile){
-      printf("Erro ao abrir arquivo da chave!");
+        printf("Erro ao abrir arquivo da chave!");
     }
     for (int i = 0; i < 8; i++) {
         fscanf(chavefile, "%2hhx", &chave[i]);
@@ -237,42 +217,6 @@ void permutacao_inicial(unsigned char *hexa){
     unsigned char permutado[8];  // vetor final
     int k, l;
 
-    /*
-    unsigned char mascaras[8];   // mascaras de bit
-
-    int shift_counter[8];       // vetor de valores usados nos shifts.
-
-    // ordem das linhas da tabela inicial para a tabela final.
-
-    // 2,4,6,8,1,3,5,7
-
-    static int ordem_permutacao[8] = {1,3,5,7,0,2,4,6};
-
-    // mascaras inicializadas com potências de 2
-    int j = 0;
-    for (int i = 7; i >= 0; i--) {
-        mascaras[j] = ceil(pow(2, i));
-        j++;
-    }
-
-    j = 0;
-    for (int i = 0; i > -8; i--) {
-        shift_counter[j] = i;
-        j++;
-    }
-
-
-    for(int j = 0; j < 8; j++) {
-        for(int i = 0; i < 8; i++) {
-            if (shift_counter[ordem_permutacao[j]] < 0)
-                permutado[j] |= ((hexa[i]&mascaras[ordem_permutacao[j]]) << abs(shift_counter[ordem_permutacao[j]]));
-            else
-                permutado[j] |= ((hexa[i]&mascaras[ordem_permutacao[j]]) >> shift_counter[ordem_permutacao[j]]);
-            shift_counter[ordem_permutacao[j]]++;
-        }
-        permutado[j] = reverseBits(permutado[j]);
-    }*/
-
     // vetor final inicializado com zeros
     for (int i = 0; i < 8; i++)
         permutado[i] = 0;
@@ -313,6 +257,10 @@ void expansao(unsigned char *D, unsigned char *E){
 
     for (int i = 0; i < 6; i++) {
         for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
+            // D[M([j]-1)/8] faz a conversão da tabela fixa de bits M para a 
+            // posição do vetor D. 
+            // por exemplo, se M[j] = 32, o bit deve ser da posição D[3], que
+            // contém os últimos 8 bits.
             temp_bit = (D[(M[j]-1)/8] & mascara[M[j]%8]);
             if (temp_bit > 0)
                 temp_bit = 1 << shift_counter;
@@ -357,9 +305,6 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
     // separa o bit mais significativo de cada meia-chave
     unsigned long long int msb_D = 134217728;
     unsigned long long int msb_C = 36028797018963968;
-    // máscaras para a separação da chave
-    unsigned long long int mascara_D = 268435455;
-    unsigned long long int mascara_C = 72057593769492480;
 
     for (int i = 0; i < tabela_shift[round]; i++){
         // aplicar a máscara pra pegar o bit mais significativo
@@ -491,38 +436,6 @@ void IP_inverso(unsigned char *C, unsigned char *F){
 
 }
 
-
-
-/* função retirada de https://www.geeksforgeeks.org/write-an-efficient-c-program-to-reverse-bits-of-a-number/ */
-unsigned char reverseBits(unsigned char num) {
-    unsigned char count = sizeof(num) * 8 - 1;
-    unsigned char reverse_num = num;
-
-    num >>= 1;
-    while(num) {
-        reverse_num <<= 1;
-        reverse_num |= num & 1;     // 1 é o bit menos significativo
-        num >>= 1;
-        count--;
-    }
-    reverse_num <<= count;
-
-    return reverse_num;
-}
-
-void print_bin(unsigned long long num){
-    int k;
-
-    for(int c = 63; c > 0; c--) {
-        k = num >> c;
-        if (k & 1)
-            printf("1");
-        else
-            printf("0");
-    }
-    printf("\n");
-}
-
 /* atribui o valor do vetor v2 para o vetor v1 */
 void atribui(unsigned char *v1, unsigned char *v2, short int tam){
   for(short int i = 0; i < tam; i++){
@@ -541,7 +454,6 @@ void print_saida(unsigned char *vetor, short int tam){
 /* divide chave para o PC2 */
 void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned long long *D){
     unsigned long long chave_int = 0;
-    unsigned long long mascara_D, mascara_C;
 
     chave_int = (unsigned long long) chave[0] << 48 |
                 (unsigned long long) chave[1] << 40 |
@@ -551,9 +463,6 @@ void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned lon
                 (unsigned long long) chave[5] << 8  |
                 (unsigned long long) chave[6];
 
-    // máscaras para a separação da chave
-    mascara_D = 268435455;
-    mascara_C = 72057593769492480;
 
     *C = chave_int & mascara_C;
     *D = chave_int & mascara_D;
