@@ -88,6 +88,11 @@ unsigned char P[32] = { 16, 7, 20, 21, 29, 12, 28, 17,
                        2, 8, 24, 14, 32, 27, 3, 9,
                        19, 13, 30, 6, 22, 11, 4, 25};
 
+
+// máscaras para a separação da chave em sub-chaves
+unsigned long long mascara_D = 268435455; //0000000000000000000000000000000000001111111111111111111111111111
+unsigned long long mascara_C = 72057593769492480; //0000000011111111111111111111111111110000000000000000000000000000
+
 // funções de tabela
 void permutacao_inicial(unsigned char *hexa);
 void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D);
@@ -103,7 +108,6 @@ void IP_inverso(unsigned char *G, unsigned char *D);
 
 
 // funções auxiliares
-// void print_bin(unsigned char num);
 void print_bin(unsigned long long num);
 void print_saida(unsigned char *vetor, short int tam);
 void atribui(unsigned char *v1, unsigned char *v2, short int tam);
@@ -233,6 +237,7 @@ int main(int argc, char **argv){
     return 0;
 }
 
+/* =========================== FUNÇÕES PRINCIPAIS =========================== */
 void permutacao_inicial(unsigned char *hexa){
     unsigned char mascaras[8];   // mascaras de bit
     unsigned char permutado[8];  // vetor final
@@ -305,6 +310,7 @@ void expansao(unsigned char *D, unsigned char *E){
         }
         E[i] = expandido[i];
     }
+    //atribui(expandido, E, 7);
 }
 
 /* 3. permutação inicial de chave (PC-1)
@@ -332,24 +338,17 @@ void permuted_choice_1(unsigned char *chave, unsigned char *pc_1){
 
 /* 3.1 deslocamento de chave -> desloca a chave de acordo com a tabela */
 void desloca_chave(unsigned long long int *C, unsigned long long int *D, int round){
-    int shift = tabela_shift[round];
     unsigned long long temp_C, temp_D;
     unsigned long long int novo_bit_C = 0;
     unsigned long long int novo_bit_D = 0;
     // separa o bit mais significativo de cada meia-chave
     unsigned long long int msb_D = 134217728;
     unsigned long long int msb_C = 36028797018963968;
-    // máscaras para a separação da chave
-    unsigned long long int mascara_D = 268435455;
-    unsigned long long int mascara_C = 72057593769492480;
 
     for (int i = 0; i < tabela_shift[round]; i++){
         // aplicar a máscara pra pegar o bit mais significativo
         novo_bit_C = *C & msb_C;
         novo_bit_D = *D & msb_D;
-
-        temp_C = (*C << 1) & mascara_C;
-        temp_D = (*D << 1) & mascara_D;
 
         // inserir o bit no final para que o shift seja circular
         if (novo_bit_C > 0)
@@ -358,12 +357,12 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
         if(novo_bit_D > 0)
             novo_bit_D  = 1;
 
-        *C = temp_C | novo_bit_C;
-        *D = temp_D | novo_bit_D;
+        *C = (*C << 1) & mascara_C | novo_bit_C;
+        *D = (*D << 1) & mascara_D | novo_bit_D;
     }
 }
 
-/* 4. permutação PC-2 -> transforma 56 bits em 48 bits */
+/* 4. permutação PC-2 - transforma 56 bits em 48 bits */
 void permuted_choice_2(unsigned char *chave, unsigned char *pc_2){
     unsigned char temp_bit = 0;
     unsigned char permutado[6] = {0, 0, 0, 0, 0, 0};
@@ -492,6 +491,46 @@ unsigned char reverseBits(unsigned char num) {
     return reverse_num;
 }
 
+
+/* atribui o valor do vetor v2 para o vetor v1 */
+void atribui(unsigned char *v1, unsigned char *v2, short int tam){
+  for(short int i = 0; i < tam; i++){
+    v1[i] = v2[i];
+  }
+}
+
+/* ================= FUNÇÕES AUXILIARES PARA O DESLOCAMENTO ================= */
+/* divide chave em C e D, com 28 bits cada, para o PC2 */
+void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned long long *D){
+    int j;
+    unsigned long long chave_int = 0;
+
+    for (int i = 6; i >= 0; i--) {
+        chave_int |= (unsigned long long) chave[j] << 8*i;
+        j++;
+    }
+
+    *C = chave_int & mascara_C;
+    *D = chave_int & mascara_D;
+}
+
+/* concatena as chaves separadas e faz o cast para o PC2 */
+void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long long *D){
+    int j = 0;
+    unsigned char chave_temp[8];
+    unsigned long long chave_concatenada = 0;
+
+    chave_concatenada = *C | *D;
+
+    for (int i = 6; i >= 0; i--) {
+        chave[j] = (chave_concatenada >> 8*i) & 0xFF;     
+        j++;
+
+    }
+}
+
+/* ========================= FUNÇÕES DE IMPRESSÃO =========================== */
+/* imprime o número em binário */
 void print_bin(unsigned long long num){
     int k;
 
@@ -505,13 +544,6 @@ void print_bin(unsigned long long num){
     printf("\n");
 }
 
-/* atribui o valor do vetor v2 para o vetor v1 */
-void atribui(unsigned char *v1, unsigned char *v2, short int tam){
-  for(short int i = 0; i < tam; i++){
-    v1[i] = v2[i];
-  }
-}
-
 /* printa as posições do vetor em hexa */
 void print_saida(unsigned char *vetor, short int tam){
   for(short int i = 0; i < tam; i++)
@@ -520,38 +552,3 @@ void print_saida(unsigned char *vetor, short int tam){
 }
 
 
-/* divide chave para o PC2 */
-void divide_chave (unsigned char *chave, unsigned long long int *C, unsigned long long *D){
-    unsigned long long chave_int = 0;
-    unsigned long long mascara_D, mascara_C;
-
-    chave_int = (unsigned long long) chave[0] << 48 |
-                (unsigned long long) chave[1] << 40 |
-                (unsigned long long) chave[2] << 32 |
-                (unsigned long long) chave[3] << 24 |
-                (unsigned long long) chave[4] << 16 |
-                (unsigned long long) chave[5] << 8  |
-                (unsigned long long) chave[6];
-
-    // máscaras para a separação da chave
-    mascara_D = 268435455;
-    mascara_C = 72057593769492480;
-
-    *C = chave_int & mascara_C;
-    *D = chave_int & mascara_D;
-}
-
-/* concatena as chaves separadas e faz o cast para o PC2 */
-void concatena_chave (unsigned char *chave, unsigned long long *C, unsigned long long *D){
-    unsigned long long chave_concatenada = 0;
-    unsigned char chave_temp[8];
-
-    chave_concatenada = *C | *D;
-
-    int j = 0;
-    for (int i = 6; i >= 0; i--) {
-        chave[j] = (chave_concatenada >> 8*i) & 0xFF;
-        j++;
-
-    }
-}
