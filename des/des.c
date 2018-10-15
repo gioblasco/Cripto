@@ -121,26 +121,6 @@ int main(int argc, char **argv){
     unsigned long long int C = 0, D = 0;
     FILE *entfile, *chavefile;
 
-    /*
-    entrada[0] = 0x69;
-    entrada[1] = 0x6E;
-    entrada[2] = 0x74;
-    entrada[3] = 0x72;
-    entrada[4] = 0x6F;
-    entrada[5] = 0x64;
-    entrada[6] = 0x75;
-    entrada[7] = 0x63;
-
-    chave[0] = 0x31;
-    chave[1] = 0x32;
-    chave[2] = 0x33;
-    chave[3] = 0x34;
-    chave[4] = 0x35;
-    chave[5] = 0x36;
-    chave[6] = 0x37;
-    chave[7] = 0x38;
-    */
-
     if(argc != 3){
       printf("Chamada errada! Argumentos: ./des arquivo_texto arquivo_chave\n");
       return 0;
@@ -207,21 +187,23 @@ int main(int argc, char **argv){
         printf("Expansao: ");
         print_saida(E, 6);
         xor_primeiro(pc_2, E, res_xor1);
+
         printf("Add Key: ");
         print_saida(res_xor1, 6);
         funcoes_selecao(res_xor1, res_sbox);
+
         printf("S-Box: ");
         print_saida(res_sbox, 4);
         permuta_final(res_sbox, res_permuta);
+
         printf("Permuta: ");
         print_saida(res_permuta, 4);
         xor_ultimo(L, res_permuta, res_xor2);
+
         printf("Add Left: ");
         print_saida(res_xor2, 4);
-
         atribui(R, res_xor2, 4);
         atribui(L, Lfinal, 4);
-
         swap(R, L, texto);
         print_saida(texto, 8);
     }
@@ -239,30 +221,16 @@ int main(int argc, char **argv){
 
 /* =========================== FUNÇÕES PRINCIPAIS =========================== */
 void permutacao_inicial(unsigned char *hexa){
-    unsigned char mascaras[8];   // mascaras de bit
-    unsigned char permutado[8];  // vetor final
+    unsigned char mascaras[8] = {128,64,32,16,8,4,2,1};  // mascaras de bit
+    unsigned char permutado[8] = {0,0,0,0,0,0,0,0} ;  // vetor final
     int shift_counter[8];       // vetor de valores usados nos shifts.
-
-    // ordem das linhas da tabela inicial para a tabela final.
-    // 2,4,6,8,1,3,5,7
-    static int ordem_permutacao[8] = {1,3,5,7,0,2,4,6};
-
-    // mascaras inicializadas com potências de 2
+    int ordem_permutacao[8] = {1,3,5,7,0,2,4,6}; // ordem da permutação considerando que o índice começa do 0
     int j = 0;
-    for (int i = 7; i >= 0; i--) {
-        mascaras[j] = ceil(pow(2, i));
-        j++;
-    }
 
-    j = 0;
     for (int i = 0; i > -8; i--) {
         shift_counter[j] = i;
         j++;
     }
-
-    // vetor final inicializado com zeros
-    for (int i = 0; i < 8; i++)
-        permutado[i] = 0;
 
     for(int j = 0; j < 8; j++) {
         for(int i = 0; i < 8; i++) {
@@ -293,13 +261,17 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
 
 /* 2. função de expansão: transforma 32 bits provenientes do vetor D em 48 bits */
 void expansao(unsigned char *D, unsigned char *E){
-    unsigned char expandido[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    unsigned int mascara[8] = {1, 128, 64, 32, 16, 8, 4, 2};
     unsigned char temp_bit;
+    unsigned char expandido[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned int mascara[8] = {1, 128, 64, 32, 16, 8, 4, 2}; 
     int shift_counter, j = 0;
 
     for (int i = 0; i < 6; i++) {
         for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
+            // D[M([j]-1)/8] faz a conversão da tabela fixa de bits M para a 
+            // posição do vetor D. 
+            // por exemplo, se M[j] = 32, o bit deve ser da posição D[3], que
+            // contém os últimos 8 bits. 
             temp_bit = (D[(M[j]-1)/8] & mascara[M[j]%8]);
             if (temp_bit > 0)
                 temp_bit = 1 << shift_counter;
@@ -310,7 +282,6 @@ void expansao(unsigned char *D, unsigned char *E){
         }
         E[i] = expandido[i];
     }
-    //atribui(expandido, E, 7);
 }
 
 /* 3. permutação inicial de chave (PC-1)
