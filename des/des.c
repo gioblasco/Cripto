@@ -234,14 +234,18 @@ int main(int argc, char **argv){
 }
 
 void permutacao_inicial(unsigned char *hexa){
+    unsigned char permutado[8];  // vetor final
     int k, l;
-    
+
     /*
     unsigned char mascaras[8];   // mascaras de bit
-    unsigned char permutado[8];  // vetor final
+
     int shift_counter[8];       // vetor de valores usados nos shifts.
+
     // ordem das linhas da tabela inicial para a tabela final.
+
     // 2,4,6,8,1,3,5,7
+
     static int ordem_permutacao[8] = {1,3,5,7,0,2,4,6};
 
     // mascaras inicializadas com potências de 2
