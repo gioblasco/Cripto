@@ -216,7 +216,7 @@ int main(int argc, char **argv){
         printf("Add Key: ");
         print_saida(res_xor1, 6);
         funcoes_selecao(res_xor1, res_sbox);
-        printf("S-box: ");
+        printf("S-Box: ");
         print_saida(res_sbox, 4);
         permuta_final(res_sbox, res_permuta);
         printf("Permuta: ");
@@ -296,7 +296,7 @@ void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
   }
 }
 
-/* 2. função de expansão: transforma 32 bits provenientes do vetor D e transforma em 48 bits */
+/* 2. função de expansão: transforma 32 bits provenientes do vetor D em 48 bits */
 void expansao(unsigned char *D, unsigned char *E){
     unsigned char expandido[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned int mascara[8] = {1, 128, 64, 32, 16, 8, 4, 2};
@@ -306,7 +306,7 @@ void expansao(unsigned char *D, unsigned char *E){
     for (int i = 0; i < 6; i++) {
         for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
             temp_bit = (D[(M[j]-1)/8] & mascara[M[j]%8]);
-            if (temp_bit != 0)
+            if (temp_bit > 0)
                 temp_bit = 1 << shift_counter;
             else
                 temp_bit = 0 << shift_counter;
@@ -347,8 +347,8 @@ void desloca_chave(unsigned long long int *C, unsigned long long int *D, int rou
     unsigned long long int novo_bit_C = 0;
     unsigned long long int novo_bit_D = 0;
     // separa o bit mais significativo de cada meia-chave
-    unsigned long long int msb_C = 134217728;
-    unsigned long long int msb_D = 9007199254740992;
+    unsigned long long int msb_D = 134217728;
+    unsigned long long int msb_C = 36028797018963968;
     // máscaras para a separação da chave
     unsigned long long int mascara_D = 268435455;
     unsigned long long int mascara_C = 72057593769492480;
