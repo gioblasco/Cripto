@@ -122,6 +122,7 @@ int main(int argc, char **argv){
         return 0;
     }
 
+    // leitura de arquivo de texto em hexa
     entfile = fopen(argv[1], "r");
     if(!entfile){
         printf("Erro ao abrir arquivo de entrada!");
@@ -131,6 +132,7 @@ int main(int argc, char **argv){
     }
     fclose(entfile);
 
+    // leitura de arquivo de chave em hexa
     chavefile = fopen(argv[2], "r");
     if(!chavefile){
         printf("Erro ao abrir arquivo da chave!");
@@ -144,6 +146,7 @@ int main(int argc, char **argv){
     printf("PLAIN TEXT\n");
     print_saida(entrada, 8);
 
+    // realiza permutacao inicial
     permutacao_inicial(entrada);
     printf("\nIP\n");
     print_saida(entrada, 8);
@@ -152,6 +155,7 @@ int main(int argc, char **argv){
     printf("\nCHAVE\n");
     print_saida(chave, 8);
 
+    // realiza PC1 na chave
     permuted_choice_1(chave, pc_1);
 
     printf("\nPC1 - SELECIONA CHAVE\n");
@@ -163,14 +167,17 @@ int main(int argc, char **argv){
     // round de 16 passos
     for(int i = 0; i < 16; i++){
         divide_bloco(texto, L, R);
+        // armazena o texto a direita em Lfinal para ser atribuido ao texto a esquerda no final do round
         atribui(Lfinal, R, 4);
 
         printf("\nCHAVE DE ROUND %d\n", i+1);
         printf("Deslocamento: ");
+        // realiza shift circular na chave
         desloca_chave(&C, &D, i);
         concatena_chave(pc_1, &C, &D);
         print_saida(pc_1, 7);
 
+        // realiza PC2 na chave
         permuted_choice_2(pc_1, pc_2);
         printf("PC2: ");
         print_saida(pc_2, 6);
@@ -179,18 +186,23 @@ int main(int argc, char **argv){
         printf("\nROUND %d\n", i+1);
 
         print_saida(texto, 8);
+        // realiza expansao no texto (32 para 48 bits)
         expansao(R, E);
         printf("Expansao: ");
         print_saida(E, 6);
+        // realiza xor entre chave proveniente do PC2 e texto expandido
         xor_primeiro(pc_2, E, res_xor1);
         printf("Add Key: ");
         print_saida(res_xor1, 6);
+        // passa o texto proveniente do xor pelas s-box
         funcoes_selecao(res_xor1, res_sbox);
         printf("S-Box: ");
         print_saida(res_sbox, 4);
+        // faz a ultima permutacao do round
         permuta_final(res_sbox, res_permuta);
         printf("Permuta: ");
         print_saida(res_permuta, 4);
+        // faz xor entre o resultado da permutacao e a divisao esquerda do texto
         xor_ultimo(L, res_permuta, res_xor2);
         printf("Add Left: ");
         print_saida(res_xor2, 4);
@@ -198,14 +210,17 @@ int main(int argc, char **argv){
         atribui(R, res_xor2, 4);
         atribui(L, Lfinal, 4);
 
+        // junta texto a esquerda e texto a direita
         swap(R, L, texto);
         print_saida(texto, 8);
     }
 
+    // faz swap entre texto a direita e texto a esquerda
     swap(L, R, texto);
     printf("\nSwap: ");
     print_saida(texto, 8);
 
+    // faz o inverso da permutacao inicial
     IP_inverso(texto, final);
     printf("\nIP Inverso: ");
     print_saida(final, 8);
@@ -222,9 +237,11 @@ void permutacao_inicial(unsigned char *hexa){
         permutado[i] = 0;
 
     for (int j = 0; j < 4; j++){
-      k = j*2;
-      l = 0;
+      k = j*2; // variavel utilizada para o deslocamento de mascara
+      l = 0; // variavel utilizada para posicionar os novos valores a serem concatenados
+      // inicia vetor ao contrario para pegar valores debaixo para cima
       for(int i = 7; i >= 0; i--){
+        // atribui os valores a linha j e a linha j+4 ao mesmo tempo
         permutado[j+4] |= ((hexa[i]&(128>>k)) << k) >> l;
         permutado[j] |= ((hexa[i]&(128>>(k+1))) << (k+1)) >> l;
         l++;
@@ -240,6 +257,7 @@ https://www.nku.edu/~christensen/DESschneier.pdf
 
 1. dividir o bloco de 64-bits (8 caracteres) iniciais em 2 blocos (de 32 bits) */
 void divide_bloco(unsigned char *hexa, unsigned char *G, unsigned char *D){
+  // é feita a divisão do texto original em duas partes (esquerda G e direita D)
   for(int i = 0; i < 4; i++){
     G[i] = 0;
     G[i] = hexa[i];
@@ -257,8 +275,8 @@ void expansao(unsigned char *D, unsigned char *E){
 
     for (int i = 0; i < 6; i++) {
         for (shift_counter = 7; shift_counter >= 0; shift_counter--) {
-            // D[M([j]-1)/8] faz a conversão da tabela fixa de bits M para a 
-            // posição do vetor D. 
+            // D[M([j]-1)/8] faz a conversão da tabela fixa de bits M para a
+            // posição do vetor D.
             // por exemplo, se M[j] = 32, o bit deve ser da posição D[3], que
             // contém os últimos 8 bits.
             temp_bit = (D[(M[j]-1)/8] & mascara[M[j]%8]);
@@ -348,6 +366,7 @@ void permuted_choice_2(unsigned char *chave, unsigned char *pc_2){
 
 /* 5. XOR entre texto expandido e chave (ambos 48 bits) */
 void xor_primeiro(unsigned char *chave, unsigned char *E, unsigned char *after_xor1){
+  // aqui é feito o xor (^) posicão a posicão entre a chave depois do PC2 e o texto expandido
   for(int i = 0; i < 6; i++){
     after_xor1[i] = chave[i] ^ E[i];
   }
@@ -356,11 +375,20 @@ void xor_primeiro(unsigned char *chave, unsigned char *E, unsigned char *after_x
 /* 6. passa a resultado proveniente do XOR pelas S-box */
 void funcoes_selecao(unsigned char *xor, unsigned char *res_sbox){
   unsigned char posicao = 0, aux = 0;
+  // inicializacao do vetor de saida
   for(short int i=0; i < 4; i++){
     res_sbox[i] = 0;
   }
 
-  // final | inicial + meio
+  /* aqui temos que lidar com 6 bits de posições que possuem 8 bits.
+  encontramos nas s-box valores a cada 4 bits de res_box.
+  primeiramente pegamos o bit final de um valor de 6 bits e fazemos o deslocamento para o final de um char (8 bits),
+  depois, pegamos o bit inicial de um valor de 6 bits e fazemos o deslocamento para a posição anterior ao final de um char (8 bits)
+  e assim obtemos a linha da sbox.
+  para a coluna, pegamos os 4 bits do meio de um valor de 6 bits e fazemos o deslocamento para o final de um char (8 bits).
+  como não estamos mexendo com matrizes, então temos que converter a linha e coluna para uma posição de vetor, então fazemos:
+  linha * 16 + coluna
+  */
   posicao = (((xor[0] & 4) >> 2) | ((xor[0] & 128) >> 6)) * 16 + ((xor[0] & 120) >> 3);
   res_sbox[0] |= S1[posicao] << 4;
 
@@ -389,9 +417,18 @@ void funcoes_selecao(unsigned char *xor, unsigned char *res_sbox){
 // Permuta
 void permuta_final(unsigned char *S, unsigned char *res_per){
   unsigned char aux = 0;
+  // inicializacao do vetor de saida
   for(int i = 0; i < 4; i++){
     res_per[i] = 0;
   }
+
+  /*
+  para essa permutacao, temos o auxilio da tabela P.
+  S[P([i]-1)/8] faz a conversão da tabela fixa de bits P para a
+  posição do vetor S. depois, criamos a mascara com relação ao binario 10000000
+  por fim, deslocamos para o inicio do valor de aux e em seguida,
+  concatenamos o valor encontrado na posição necessaria
+  */
   for(int i = 0; i < 32; i++){
     //128 = 10000000b
     aux = S[(P[i]-1)/8] & (128 >> ((P[i]-1)%8));
@@ -403,6 +440,7 @@ void permuta_final(unsigned char *S, unsigned char *res_per){
 
 /* 7. XOR entre L e resultado proveniente da permuta final */ // Add Left
 void xor_ultimo(unsigned char *Linicial, unsigned char *P, unsigned char *after_xor2){
+  // aqui é feito o xor (^) posição a posição entre o texto esquerdo inicial e o resultado da permutacao final do round
   for(int i = 0; i < 4; i++){
     after_xor2[i] = Linicial[i] ^ P[i];
   }
@@ -410,6 +448,7 @@ void xor_ultimo(unsigned char *Linicial, unsigned char *P, unsigned char *after_
 
 //L vai para o lugar do R e R vai para o lugar do L -> funciona tanto como swap, como para transformar os dois vetores em 1
 void swap(unsigned char *L, unsigned char *R, unsigned char *S){
+  // aqui fazemos um swap entre a variavel L e R e armazenamos no vetor S
   for(int i = 0; i<4; i++){
     S[i] = R[i];
     S[i+4] = L[i];
@@ -420,9 +459,14 @@ void swap(unsigned char *L, unsigned char *R, unsigned char *S){
 void IP_inverso(unsigned char *C, unsigned char *F){
   int k = 7, l;
 
+  // inicialização do vetor de saida
   for (int i = 0; i < 8; i++)
       F[i] = 0;
 
+  /* aqui utilizamos o mesmo conceito da permutacao inicial, porem
+  ao inves de passar os valores invertidos de coluna para linha,
+  passamos de linha para coluna
+  */
   for(int j = 0; j < 8; j++){
     l = 0;
     for(int i = 0; i < 4; i++){
