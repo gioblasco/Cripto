@@ -2,21 +2,20 @@
 
 void eea(int r0, int r1, int *ri, int *inv);
 void qem(int X, int k, int N, int *y);
+void primo(int N, int *P);
 
 int main(){
-  int N, E, C, M, r, inv;
+  int N, E, C, M, P, Q, r, inv;
 
   scanf("%d %d %d", &N, &E, &C);
 
-  eea(N, E, &r, &inv);
+  primo(N, &P);
 
-  printf("%d\n", r);
+  Q = N/P;
 
-  eea(E, r, &r, &inv);
+  eea((P-1)*(Q-1), E, &r, &inv);
 
   qem(C, inv, N, &M);
-
-  printf("%d\n", inv);
 
   printf("%d\n", M);
 
@@ -29,25 +28,20 @@ void eea(int r0, int r1, int *ri, int *inv){
       tant = 0; t = 1;
 
       rant = r0; r = r1;
-      if(r1 > r0){
-        rant = r1; r = r0;
-        r0 = rant; r1 = r;
-      }
 
       while(r != 0){
-          // if(t < 0)
-          //     t = t + r0;
           q = rant/r;
           auxr = rant;
           rant = r;
-          if((auxr % r) == 1)
-            *ri = r;
           r = auxr % r;
           auxt = tant;
           tant = t;
           t = auxt - q*t;
       }
 
+      if(t < 0)
+        t = t + r0;
+      *ri = rant;
       *inv = tant;
 }
 
@@ -69,5 +63,23 @@ void qem(int X, int k, int N, int *y){
       }
     }
     masc >>= 1;
+  }
+}
+
+void primo(int N, int *P){
+  int max, prime = 2;
+
+  while(N!=0){
+    if((N % prime) != 0)
+      prime++;
+    else {
+      max = N;
+      N /= prime;
+
+      if(N == 1){
+        *P = max;
+        break;
+      }
+    }
   }
 }

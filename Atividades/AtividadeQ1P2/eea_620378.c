@@ -9,8 +9,6 @@ int main(){
     rant = r0; r = r1;
 
     while(r != 0){
-        if(t < 0)
-            t = t + r0;
         q = rant/r;
         auxr = rant;
         rant = r;
@@ -20,6 +18,8 @@ int main(){
         t = auxt - q*t;
     }
 
+    if(tant < 0)
+        tant += r0;
     if(rant == 1)
         printf("%d %d\n", rant, tant);
     else
