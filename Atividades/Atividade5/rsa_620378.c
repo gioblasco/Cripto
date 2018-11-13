@@ -1,13 +1,13 @@
 #include<stdio.h>
 
-void eea(int r0, int r1, int *ri, int *inv);
-void qem(int X, int k, int N, int *y);
-void primo(int N, int *P);
+void eea(long long int r0, long long int r1, long long int *ri, long long int *inv);
+void qem(long long int X, long long int k, long long int N, long long int *y);
+void primo(long long int N, long long int *P);
 
 int main(){
-  int N, E, C, M, P, Q, r, inv;
+  long long int N, E, C, M, P, Q, r, inv;
 
-  scanf("%d %d %d", &N, &E, &C);
+  scanf("%lld %lld %lld", &N, &E, &C);
 
   primo(N, &P);
 
@@ -17,13 +17,13 @@ int main(){
 
   qem(C, inv, N, &M);
 
-  printf("%d\n", M);
+  printf("%lld\n", M);
 
   return 0;
 }
 
-void eea(int r0, int r1, int *ri, int *inv){
-  int auxr, tant, t, auxt, rant, r, q;
+void eea(long long int r0, long long int r1, long long int *ri, long long int *inv){
+      long long int auxr, tant, t, auxt, rant, r, q;
 
       tant = 0; t = 1;
 
@@ -39,19 +39,20 @@ void eea(int r0, int r1, int *ri, int *inv){
           t = auxt - q*t;
       }
 
-      if(t < 0)
-        t = t + r0;
+      if(tant < 0)
+         tant += r0;
       *ri = rant;
       *inv = tant;
 }
 
-void qem(int X, int k, int N, int *y){
-  unsigned int masc = 2147483648;
+void qem(long long int X, long long int k, long long int N, long long int *y){
+  unsigned long long int masc = 1;
   int i, num = 0;
+  masc <<= 63;
 
   *y = X;
 
-  for(i = sizeof(int)*8-1; i >= 0; i--){
+  for(i = (sizeof(long long int)*8)-1; i >= 0; i--){
     if(num == 0){
       if((k & masc) > 0){
         num = 1;
@@ -66,8 +67,8 @@ void qem(int X, int k, int N, int *y){
   }
 }
 
-void primo(int N, int *P){
-  int max, prime = 2;
+void primo(long long int N, long long int *P){
+  long long int max, prime = 2;
 
   while(N!=0){
     if((N % prime) != 0)
