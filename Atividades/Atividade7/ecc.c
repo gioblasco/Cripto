@@ -1,5 +1,5 @@
 #include<stdio.h>
-#include <stdlib.h>
+#include<stdlib.h>
 
 typedef struct {
   long long int x;
@@ -15,13 +15,13 @@ long long int n, a, p;
 Ponto G;
 
 int main (){
-  scanf("%llu", &n);
+  scanf("%lld", &n);
   while(n != 0){
-    scanf("%llu %llu %llu %llu", &a, &p, &G.x, &G.y);
+    scanf("%lld %lld %lld %lld", &a, &p, &G.x, &G.y);
 
     addmultiply();
 
-    scanf("%llu", &n);
+    scanf("%lld", &n);
   }
 
   return 0;
@@ -63,7 +63,7 @@ void addmultiply(){
 
 Ponto add(Ponto A, Ponto B){
   long long int r, aux;
-  Ponto Q;
+  Ponto R;
   if(equals(A, B)){
     r = ((3*(A.x*A.x) + a) % p) * (inverse(p, 2*A.y) % p);
   } else {
@@ -74,16 +74,22 @@ Ponto add(Ponto A, Ponto B){
     r = ((B.y - A.y) % p) * (inverse(p, aux) % p);
   }
 
-  Q.x = ((r*r) - A.x - B.x) % p;
-  if(Q.x < 0){
-    Q.x += p;
+  R.x = ((r*r) - A.x - B.x) % p;
+  if(R.x < 0){
+    R.x += p;
   }
-  Q.y = (r*(A.x - Q.x) - A.y) % p;
-  if(Q.y < 0){
-    Q.y += p;
+  R.y = (r*(A.x - Q.x) - A.y) % p;
+  if(R.y < 0){
+    R.y += p;
   }
 
-  return Q;
+  return R;
+}
+
+char isinfinity(Ponto A){
+  if(A.x == 0 && A.y == 0)
+    return 1;
+  return 0;
 }
 
 char equals(Ponto A, Ponto B){
@@ -103,7 +109,7 @@ long long int inverse(long long int r0, long long int r1){
           q = rant/r;
           auxr = rant;
           rant = r;
-          r = auxr % r;
+          r = auxr - q*r;
           auxt = tant;
           tant = t;
           t = auxt - q*t;
