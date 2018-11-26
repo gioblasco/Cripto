@@ -8,6 +8,7 @@ typedef struct {
 
 void addmultiply();
 Ponto add(Ponto A, Ponto B);
+char isinfinity(Ponto A);
 char equals(Ponto A, Ponto B);
 long long int inverse(long long int r0, long long int r1);
 
@@ -64,23 +65,37 @@ void addmultiply(){
 Ponto add(Ponto A, Ponto B){
   long long int r, aux;
   Ponto R;
-  if(equals(A, B)){
-    r = ((3*(A.x*A.x) + a) % p) * (inverse(p, 2*A.y) % p);
+  if(isinfinity(A) && isinfinity(B)){
+    R.x = 0;
+    R.y = 0;
+  } else if (isinfinity(A)){
+    R.x = B.x;
+    R.y = B.y;
+  } else if (isinfinity(B)){
+    R.x = A.x;
+    R.y = A.y;
+  } else if (A.x == B.x && (A.y == ((p-B.y) % p) || B.y == ((p-A.y) % p))) {
+    R.x = 0;
+    R.y = 0;
   } else {
-    aux = (B.x - A.x);
-    if(aux < 0){
-      aux += p;
+    if(equals(A, B)){
+      r = ((3*(A.x*A.x) + a) % p) * (inverse(p, 2*A.y) % p);
+    } else {
+      aux = (B.x - A.x);
+      if(aux < 0){
+        aux += p;
+      }
+      r = ((B.y - A.y) % p) * (inverse(p, aux) % p);
     }
-    r = ((B.y - A.y) % p) * (inverse(p, aux) % p);
-  }
 
-  R.x = ((r*r) - A.x - B.x) % p;
-  if(R.x < 0){
-    R.x += p;
-  }
-  R.y = (r*(A.x - Q.x) - A.y) % p;
-  if(R.y < 0){
-    R.y += p;
+    R.x = ((r*r) - A.x - B.x) % p;
+    if(R.x < 0){
+      R.x += p;
+    }
+    R.y = (r*(A.x - R.x) - A.y) % p;
+    if(R.y < 0){
+      R.y += p;
+    }
   }
 
   return R;
